@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liturgical Calendar</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header>
+    <h1>Liturgical Calendar</h1>
+    <div class="controls">
+      <div class="control-group">
+        <label for="version-select">Version:</label>
+        <select id="version-select"></select>
+      </div>
+      <div class="control-group">
+        <label for="year-input">Year:</label>
+        <input type="number" id="year-input" min="1900" max="2100">
+      </div>
+      <div class="control-group view-toggle">
+        <button id="btn-grid" class="active">Grid</button>
+        <button id="btn-agenda">Agenda</button>
+      </div>
+      <button id="btn-subscribe" class="subscribe-btn">Subscribe (.ics)</button>
+    </div>
+  </header>
+  <main>
+    <div id="calendar-grid" class="view"></div>
+    <div id="calendar-agenda" class="view hidden"></div>
+  </main>
+  <footer>
+    <div class="color-legend">
+      <span class="legend-item">
+        <span class="swatch swatch-white"></span>White
+      </span>
+      <span class="legend-item">
+        <span class="swatch swatch-red"></span>Red
+      </span>
+      <span class="legend-item">
+        <span class="swatch swatch-green"></span>Green
+      </span>
+      <span class="legend-item">
+        <span class="swatch swatch-violet"></span>Violet
+      </span>
+      <span class="legend-item">
+        <span class="swatch swatch-rose"></span>Rose
+      </span>
+      <span class="legend-item">
+        <span class="swatch swatch-black"></span>Black
+      </span>
+    </div>
+    <p>Powered by <a href="https://github.com/divinumofficium/divinum-officium">Divinum Officium</a></p>
+  </footer>
+  <script type="module" src="./app.ts"></script>
+</body>
+</html>
