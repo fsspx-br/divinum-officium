@@ -1,0 +1,19 @@
+{
+  "name": "liturgical-calendar",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "generate-ics": "tsx src/build/generate-ics.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vite": "^5.4.0",
+    "vitest": "^2.0.0",
+    "tsx": "^4.0.0"
+  }
+}
