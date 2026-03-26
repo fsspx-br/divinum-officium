@@ -9,7 +9,10 @@
     "outDir": "dist",
     "rootDir": "src",
     "declaration": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "paths": {
+      "@engine/*": ["./src/engine/*"]
+    }
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]
