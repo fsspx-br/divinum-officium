@@ -175,20 +175,17 @@ export function parseRankField(rank: string): ParsedRank {
   // Strip any surrounding whitespace
   const trimmed = rank.trim();
 
-  // The raw content may start with ;; — split on ;; throughout
+  // Split on ;; — mirrors Perl's split(";;", $trank)
+  // Format: name;;rankType;;numericRank;;commonRef
+  // The name field is often empty (leading ;;), e.g.:
+  //   ";;Duplex I classis;;7;;ex C10" → ["", "Duplex I classis", "7", "ex C10"]
+  //   "S. Joseph;;Duplex I classis;;6.1" → ["S. Joseph", "Duplex I classis", "6.1"]
   const parts = trimmed.split(';;').map(p => p.trim());
 
-  // If the string starts with ';;', split produces an empty first element.
-  // We want: [name, rankType, numericRank, commonRef?]
-  const meaningful = parts.filter((_, i) => !(i === 0 && parts[0] === ''));
-
-  // Format after stripping the leading empty segment:
-  //   [name, rankType/numericRank, commonRef?]
-  // The numeric rank and string rank type share the same field (e.g. "7").
-  const name        = meaningful[0] ?? '';
-  const rankType    = meaningful[1] ?? '';
-  const numericRank = parseInt(rankType, 10) || 0;
-  const commonRef   = meaningful[2] || undefined;
+  const name        = parts[0] ?? '';
+  const rankType    = parts[1] ?? '';
+  const numericRank = parseFloat(parts[2]) || 0;
+  const commonRef   = parts[3] || undefined;
 
   return { name, rankType, numericRank, commonRef };
 }

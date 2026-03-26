@@ -320,51 +320,76 @@ describe('parseTransferFile – real Transfer/a.txt', () => {
 // parseRankField
 // ---------------------------------------------------------------------------
 describe('parseRankField – inline samples', () => {
-  it('parses a standard rank string with leading ;;', () => {
+  it('parses a standard rank string with leading ;; (name empty)', () => {
+    // ";;Duplex I classis cum Octava;;7;;ex C10"
+    // parts: ["", "Duplex I classis cum Octava", "7", "ex C10"]
     const result = parseRankField(';;Duplex I classis cum Octava;;7;;ex C10');
     expect(result).toEqual({
-      name:        'Duplex I classis cum Octava',
-      rankType:    '7',
+      name:        '',
+      rankType:    'Duplex I classis cum Octava',
       numericRank: 7,
       commonRef:   'ex C10',
     });
   });
 
   it('returns undefined commonRef when not present', () => {
-    const result = parseRankField(';;Feria;;1;;');
+    const result = parseRankField(';;Feria;;1');
+    expect(result.name).toBe('');
+    expect(result.rankType).toBe('Feria');
+    expect(result.numericRank).toBe(1);
     expect(result.commonRef).toBeUndefined();
   });
 
-  it('parses without a leading ;; (bare format)', () => {
-    const result = parseRankField('Simplex;;2;;ref');
-    expect(result).toMatchObject({
-      name:        'Simplex',
-      rankType:    '2',
-      numericRank: 2,
-      commonRef:   'ref',
+  it('parses with name present (no leading ;;)', () => {
+    const result = parseRankField('S. Joseph;;Duplex I classis;;6.1;;ex Sancti/06-30');
+    expect(result).toEqual({
+      name:        'S. Joseph',
+      rankType:    'Duplex I classis',
+      numericRank: 6.1,
+      commonRef:   'ex Sancti/06-30',
     });
   });
 
   it('numericRank defaults to 0 for non-numeric rank', () => {
-    const result = parseRankField(';;Feria;;abc;;');
+    const result = parseRankField(';;Feria;;abc');
     expect(result.numericRank).toBe(0);
   });
 
   it('handles whitespace around parts', () => {
-    const result = parseRankField('  ;;  Duplex  ;;  6  ;;  ');
-    expect(result.name).toBe('Duplex');
-    expect(result.rankType).toBe('6');
-    expect(result.numericRank).toBe(6);
-    expect(result.commonRef).toBeUndefined();
+    const result = parseRankField('  ;;  Duplex majus  ;;  4  ;;  ex C10  ');
+    expect(result.name).toBe('');
+    expect(result.rankType).toBe('Duplex majus');
+    expect(result.numericRank).toBe(4);
+    expect(result.commonRef).toBe('ex C10');
   });
 
-  it('parses Duplex II classis with commonRef', () => {
-    const result = parseRankField(';;Duplex II classis;;6;;C8');
+  it('parses real rank from office file: Pasc0-0', () => {
+    const result = parseRankField(';;Duplex I classis cum Octava Privilegiata I;;7');
     expect(result).toEqual({
-      name:        'Duplex II classis',
-      rankType:    '6',
-      numericRank: 6,
-      commonRef:   'C8',
+      name:        '',
+      rankType:    'Duplex I classis cum Octava Privilegiata I',
+      numericRank: 7,
+      commonRef:   undefined,
+    });
+  });
+
+  it('parses real rank: Quad1-0', () => {
+    const result = parseRankField(';;I classis Semiduplex;;6.9');
+    expect(result).toEqual({
+      name:        '',
+      rankType:    'I classis Semiduplex',
+      numericRank: 6.9,
+      commonRef:   undefined,
+    });
+  });
+
+  it('parses real rank: 01-25 with commonRef', () => {
+    const result = parseRankField(';;Duplex majus;;4;;ex Sancti/06-30');
+    expect(result).toEqual({
+      name:        '',
+      rankType:    'Duplex majus',
+      numericRank: 4,
+      commonRef:   'ex Sancti/06-30',
     });
   });
 });
