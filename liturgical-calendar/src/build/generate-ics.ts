@@ -27,7 +27,7 @@ const __dirname = dirname(__filename);
 
 // Paths are relative to THIS script's location inside src/build/
 const DATA_DIR = resolve(__dirname, '../../data');
-const OFFICE_DIR = resolve(__dirname, '../../../../web/www/horas/Latin');
+const OFFICE_DIR = resolve(__dirname, '../../../web/www/horas/Latin');
 const DIST_DIR = resolve(__dirname, '../../dist');
 
 // ---------------------------------------------------------------------------
