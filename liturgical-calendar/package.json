@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build && tsx src/build/generate-ics.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "generate-ics": "tsx src/build/generate-ics.ts"

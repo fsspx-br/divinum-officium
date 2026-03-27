@@ -1,3 +1,11 @@
+/**
+ * i18n.ts — Lightweight internationalisation module
+ *
+ * Loads flat JSON dictionaries per locale.
+ * Exports t(key) for translations, setLocale/getLocale for state.
+ * Persists locale choice to localStorage.
+ */
+
 import en from './locales/en.json';
 import pt from './locales/pt.json';
 import la from './locales/la.json';
@@ -23,6 +31,7 @@ function init(): void {
   if (stored && stored in dictionaries) {
     currentLocale = stored as Locale;
   }
+  document.documentElement.lang = currentLocale;
 }
 
 init();
