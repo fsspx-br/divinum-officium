@@ -8,14 +8,19 @@
 </head>
 <body>
   <header>
-    <h1>Liturgical Calendar</h1>
+    <div class="header-top">
+      <h1 id="app-title">Liturgical Calendar</h1>
+      <div class="control-group">
+        <select id="lang-select" aria-label="Language"></select>
+      </div>
+    </div>
     <div class="controls">
       <div class="control-group">
-        <label for="version-select">Version:</label>
+        <label for="version-select" id="label-version">Version:</label>
         <select id="version-select"></select>
       </div>
       <div class="control-group">
-        <label for="year-input">Year:</label>
+        <label for="year-input" id="label-year">Year:</label>
         <input type="number" id="year-input" min="1900" max="2100">
       </div>
       <div class="control-group view-toggle">
@@ -32,25 +37,25 @@
   <footer>
     <div class="color-legend">
       <span class="legend-item">
-        <span class="swatch swatch-white"></span>White
+        <span class="swatch swatch-white"></span><span data-i18n="colors.white">White</span>
       </span>
       <span class="legend-item">
-        <span class="swatch swatch-red"></span>Red
+        <span class="swatch swatch-red"></span><span data-i18n="colors.red">Red</span>
       </span>
       <span class="legend-item">
-        <span class="swatch swatch-green"></span>Green
+        <span class="swatch swatch-green"></span><span data-i18n="colors.green">Green</span>
       </span>
       <span class="legend-item">
-        <span class="swatch swatch-violet"></span>Violet
+        <span class="swatch swatch-violet"></span><span data-i18n="colors.violet">Violet</span>
       </span>
       <span class="legend-item">
-        <span class="swatch swatch-rose"></span>Rose
+        <span class="swatch swatch-rose"></span><span data-i18n="colors.rose">Rose</span>
       </span>
       <span class="legend-item">
-        <span class="swatch swatch-black"></span>Black
+        <span class="swatch swatch-black"></span><span data-i18n="colors.black">Black</span>
       </span>
     </div>
-    <p>Powered by <a href="https://github.com/divinumofficium/divinum-officium">Divinum Officium</a></p>
+    <p><span data-i18n="legend.powered">Powered by</span> <a href="https://github.com/divinumofficium/divinum-officium">Divinum Officium</a></p>
   </footer>
   <script type="module" src="./app.ts"></script>
 </body>
