@@ -16,9 +16,10 @@
 
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { mkdirSync, writeFileSync } from 'fs';
+import { mkdirSync, writeFileSync, readFileSync } from 'fs';
 import { LiturgicalCalendar } from '../engine/calendar';
 import { generateICS } from '../ics/generator';
+import type { CalendarDay } from '../engine/types';
 
 // ---------------------------------------------------------------------------
 // Path resolution (works for both ESM and CommonJS)
@@ -47,6 +48,28 @@ const LOCALES: LocaleConfig[] = [
   { code: 'pt', officeDir: resolve(__dirname, '../../../web/www/horas/Portugues') },
   { code: 'la', officeDir: LATIN_OFFICE_DIR },
 ];
+
+// ---------------------------------------------------------------------------
+// Portuguese translation map (Latin name → Portuguese)
+// ---------------------------------------------------------------------------
+
+const PT_TRANSLATIONS: Record<string, string> = JSON.parse(
+  readFileSync(resolve(__dirname, 'pt-translations.json'), 'utf8'),
+);
+
+/** Apply Portuguese translations to celebration names and commemorations. */
+function applyPtTranslations(days: CalendarDay[]): CalendarDay[] {
+  return days.map((day) => ({
+    ...day,
+    celebration: {
+      ...day.celebration,
+      name: PT_TRANSLATIONS[day.celebration.name] ?? day.celebration.name,
+    },
+    commemorations: day.commemorations.map(
+      (c) => PT_TRANSLATIONS[c] ?? c,
+    ),
+  }));
+}
 
 // ---------------------------------------------------------------------------
 // Versions to generate
@@ -115,7 +138,12 @@ async function main(): Promise<void> {
         process.stdout.write(`  [${locale.code}][${version}] ${year} … `);
 
         try {
-          const days = calendar.getCalendarYear(year, version);
+          let days = calendar.getCalendarYear(year, version);
+
+          // Apply Portuguese translation map
+          if (locale.code === 'pt') {
+            days = applyPtTranslations(days);
+          }
 
           // Write JSON
           const jsonContent = JSON.stringify(days, null, 2);
