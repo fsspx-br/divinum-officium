@@ -2,11 +2,13 @@
  * generate-ics.ts — CLI build script for ICS and JSON output files
  *
  * Generates liturgical calendar data for a set of pre-defined versions,
- * for the current year and the next year.
+ * for the current year and the next year. JSON is generated per locale
+ * (one LiturgicalCalendar instance per language directory). ICS is only
+ * generated for Latin to avoid duplication.
  *
  * Output:
- *   dist/ics/{version-slug}/{year}.ics   — RFC 5545 iCalendar file
- *   dist/data/{version-slug}/{year}.json — CalendarDay[] JSON for the web UI
+ *   dist/ics/{version-slug}/{year}.ics              — RFC 5545 iCalendar file (Latin only)
+ *   dist/data/{locale}/{version-slug}/{year}.json    — CalendarDay[] JSON for the web UI
  *
  * Usage:
  *   npx tsx src/build/generate-ics.ts
@@ -27,8 +29,22 @@ const __dirname = dirname(__filename);
 
 // Paths are relative to THIS script's location inside src/build/
 const DATA_DIR = resolve(__dirname, '../../data');
-const OFFICE_DIR = resolve(__dirname, '../../../web/www/horas/Latin');
 const DIST_DIR = resolve(__dirname, '../../dist');
+
+// ---------------------------------------------------------------------------
+// Locale configuration
+// ---------------------------------------------------------------------------
+
+interface LocaleConfig {
+  code: string;
+  officeDir: string;
+}
+
+const LOCALES: LocaleConfig[] = [
+  { code: 'en', officeDir: resolve(__dirname, '../../../web/www/horas/English') },
+  { code: 'pt', officeDir: resolve(__dirname, '../../../web/www/horas/Portugues') },
+  { code: 'la', officeDir: resolve(__dirname, '../../../web/www/horas/Latin') },
+];
 
 // ---------------------------------------------------------------------------
 // Versions to generate
@@ -62,57 +78,59 @@ async function main(): Promise<void> {
   const currentYear = new Date().getFullYear();
   const years = [currentYear, currentYear + 1];
 
-  console.log(`Initialising LiturgicalCalendar…`);
-  console.log(`  data:   ${DATA_DIR}`);
-  console.log(`  office: ${OFFICE_DIR}`);
-  console.log();
-
-  const calendar = new LiturgicalCalendar(DATA_DIR, OFFICE_DIR);
-
-  // Validate that all requested versions are available
-  const available = new Set(calendar.getVersions());
-  const missing = VERSIONS.filter((v) => !available.has(v));
-  if (missing.length > 0) {
-    console.error('WARNING: the following versions are not available and will be skipped:');
-    for (const v of missing) {
-      console.error(`  - ${v}`);
-    }
-  }
-
-  const validVersions = VERSIONS.filter((v) => available.has(v));
-
   let totalFiles = 0;
 
-  for (const version of validVersions) {
-    const slug = versionSlug(version);
-    const icsDir = resolve(DIST_DIR, 'ics', slug);
-    const jsonDir = resolve(DIST_DIR, 'data', slug);
+  for (const locale of LOCALES) {
+    console.log(`\n── Locale: ${locale.code} ──`);
+    console.log(`  data:   ${DATA_DIR}`);
+    console.log(`  office: ${locale.officeDir}`);
 
-    mkdirSync(icsDir, { recursive: true });
-    mkdirSync(jsonDir, { recursive: true });
+    const calendar = new LiturgicalCalendar(DATA_DIR, locale.officeDir);
 
-    for (const year of years) {
-      process.stdout.write(`  [${version}] ${year} … `);
+    const available = new Set(calendar.getVersions());
+    const missing = VERSIONS.filter((v) => !available.has(v));
+    if (missing.length > 0) {
+      console.error('WARNING: the following versions are not available and will be skipped:');
+      for (const v of missing) console.error(`  - ${v}`);
+    }
 
-      try {
-        const days = calendar.getCalendarYear(year, version);
+    const validVersions = VERSIONS.filter((v) => available.has(v));
 
-        // Write ICS
-        const icsContent = generateICS(days, version);
-        const icsPath = resolve(icsDir, `${year}.ics`);
-        writeFileSync(icsPath, icsContent, 'utf8');
+    for (const version of validVersions) {
+      const slug = versionSlug(version);
+      const jsonDir = resolve(DIST_DIR, 'data', locale.code, slug);
+      mkdirSync(jsonDir, { recursive: true });
 
-        // Write JSON
-        const jsonContent = JSON.stringify(days, null, 2);
-        const jsonPath = resolve(jsonDir, `${year}.json`);
-        writeFileSync(jsonPath, jsonContent, 'utf8');
+      // ICS only for Latin locale
+      let icsDir: string | null = null;
+      if (locale.code === 'la') {
+        icsDir = resolve(DIST_DIR, 'ics', slug);
+        mkdirSync(icsDir, { recursive: true });
+      }
 
-        const dayCount = days.length;
-        console.log(`OK (${dayCount} days)`);
-        totalFiles += 2;
-      } catch (err) {
-        console.error(`FAILED`);
-        console.error(`    ${err instanceof Error ? err.message : String(err)}`);
+      for (const year of years) {
+        process.stdout.write(`  [${locale.code}][${version}] ${year} … `);
+
+        try {
+          const days = calendar.getCalendarYear(year, version);
+
+          // Write JSON
+          const jsonContent = JSON.stringify(days, null, 2);
+          writeFileSync(resolve(jsonDir, `${year}.json`), jsonContent, 'utf8');
+          totalFiles += 1;
+
+          // Write ICS (Latin only)
+          if (icsDir) {
+            const icsContent = generateICS(days, version);
+            writeFileSync(resolve(icsDir, `${year}.ics`), icsContent, 'utf8');
+            totalFiles += 1;
+          }
+
+          console.log(`OK (${days.length} days)`);
+        } catch (err) {
+          console.error(`FAILED`);
+          console.error(`    ${err instanceof Error ? err.message : String(err)}`);
+        }
       }
     }
   }
