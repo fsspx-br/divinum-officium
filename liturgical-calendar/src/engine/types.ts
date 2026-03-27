@@ -25,6 +25,7 @@ export interface CalendarDay {
   color: LiturgicalColor;
   commemorations: string[];
   transferredFrom?: string;
+  holyDayOfObligation?: boolean;
 }
 
 export type CalendarVersion = string;

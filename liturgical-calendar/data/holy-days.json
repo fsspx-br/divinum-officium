@@ -1,0 +1,18 @@
+{
+  "_comment": "Holy days of obligation by region. 'universal' applies to the entire Latin Church per 1917 CIC Canon 1247. Regional lists add local holy days. Each entry is either a MM-DD date string (fixed) or a keyword for moveable feasts.",
+  "universal": [
+    { "date": "12-25", "key": "nativity" },
+    { "date": "01-01", "key": "circumcision" },
+    { "date": "01-06", "key": "epiphany" },
+    { "date": "ascension", "key": "ascension" },
+    { "date": "corpus-christi", "key": "corpus_christi" },
+    { "date": "12-08", "key": "immaculate_conception" },
+    { "date": "08-15", "key": "assumption" },
+    { "date": "03-19", "key": "st_joseph" },
+    { "date": "06-29", "key": "sts_peter_paul" },
+    { "date": "11-01", "key": "all_saints" }
+  ],
+  "brazil": [
+    { "date": "10-12", "key": "our_lady_aparecida" }
+  ]
+}

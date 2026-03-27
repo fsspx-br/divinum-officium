@@ -72,6 +72,72 @@ function applyPtTranslations(days: CalendarDay[]): CalendarDay[] {
 }
 
 // ---------------------------------------------------------------------------
+// Holy days of obligation
+// ---------------------------------------------------------------------------
+
+interface HolyDayEntry {
+  date: string;  // MM-DD for fixed, or keyword for moveable
+  key: string;
+}
+
+interface HolyDaysConfig {
+  universal: HolyDayEntry[];
+  [region: string]: HolyDayEntry[];
+}
+
+const HOLY_DAYS_CONFIG: HolyDaysConfig = JSON.parse(
+  readFileSync(resolve(DATA_DIR, 'holy-days.json'), 'utf8'),
+);
+
+/** Name patterns for moveable feasts (key = date field from holy-days.json). */
+const MOVEABLE_FEAST_PATTERNS: Record<string, RegExp> = {
+  'ascension': /^in ascensione domini$/i,
+  'corpus-christi': /^festum sanctissimi corporis christi$/i,
+};
+
+/**
+ * Mark holy days of obligation on CalendarDay objects.
+ * Uses fixed dates from the config + name matching for moveable feasts.
+ */
+function markHolyDays(days: CalendarDay[], regions: string[] = []): CalendarDay[] {
+  // Collect all applicable entries: universal + selected regions
+  const entries: HolyDayEntry[] = [
+    ...HOLY_DAYS_CONFIG.universal,
+    ...regions.flatMap((r) => HOLY_DAYS_CONFIG[r] ?? []),
+  ];
+
+  // Build set of fixed MM-DD dates
+  const fixedDates = new Set<string>();
+  const moveableKeys: string[] = [];
+  for (const entry of entries) {
+    if (/^\d{2}-\d{2}$/.test(entry.date)) {
+      fixedDates.add(entry.date);
+    } else {
+      moveableKeys.push(entry.date);
+    }
+  }
+
+  return days.map((day) => {
+    const mmdd = day.date.slice(5); // "YYYY-MM-DD" → "MM-DD"
+    const isSunday = new Date(day.date + 'T12:00:00').getDay() === 0;
+
+    let isHolyDay = isSunday || fixedDates.has(mmdd);
+
+    if (!isHolyDay) {
+      for (const key of moveableKeys) {
+        const pattern = MOVEABLE_FEAST_PATTERNS[key];
+        if (pattern && pattern.test(day.celebration.name)) {
+          isHolyDay = true;
+          break;
+        }
+      }
+    }
+
+    return isHolyDay ? { ...day, holyDayOfObligation: true } : day;
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Versions to generate
 // ---------------------------------------------------------------------------
 
@@ -139,6 +205,9 @@ async function main(): Promise<void> {
 
         try {
           let days = calendar.getCalendarYear(year, version);
+
+          // Mark holy days of obligation (universal + brazil)
+          days = markHolyDays(days, ['brazil']);
 
           // Apply Portuguese translation map
           if (locale.code === 'pt') {
