@@ -39,5 +39,6 @@
   "states.error": "Não foi possível carregar os dados do calendário para {version} {year}.",
   "states.initError": "Falha ao inicializar a aplicação. Por favor, recarregue a página.",
   "agenda.also": "Também:",
-  "holyDay.obligation": "Dia de Preceito"
+  "holyDay.obligation": "Dia de Preceito",
+  "abstinence.day": "Dia de Abstinência"
 }

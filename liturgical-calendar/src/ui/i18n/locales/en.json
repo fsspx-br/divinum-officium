@@ -39,5 +39,6 @@
   "states.error": "Could not load calendar data for {version} {year}.",
   "states.initError": "Failed to initialise the application. Please reload the page.",
   "agenda.also": "Also:",
-  "holyDay.obligation": "Holy Day of Obligation"
+  "holyDay.obligation": "Holy Day of Obligation",
+  "abstinence.day": "Day of Abstinence"
 }

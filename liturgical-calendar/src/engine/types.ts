@@ -26,6 +26,7 @@ export interface CalendarDay {
   commemorations: string[];
   transferredFrom?: string;
   holyDayOfObligation?: boolean;
+  abstinence?: boolean;
 }
 
 export type CalendarVersion = string;

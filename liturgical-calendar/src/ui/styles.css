@@ -313,7 +313,13 @@ main {
   line-height: 1;
 }
 
-.holy-day-icon {
+.day-icons {
+  display: flex;
+  gap: 0.15rem;
+}
+
+.holy-day-icon,
+.abstinence-icon {
   font-size: 0.65rem;
   line-height: 1;
   cursor: default;

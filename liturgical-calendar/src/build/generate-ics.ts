@@ -138,6 +138,38 @@ function markHolyDays(days: CalendarDay[], regions: string[] = []): CalendarDay[
 }
 
 // ---------------------------------------------------------------------------
+// Abstinence days
+// ---------------------------------------------------------------------------
+
+/** Celebration name patterns for Ash Wednesday and Good Friday. */
+const ASH_WEDNESDAY_PATTERN = /cinerum|cinzas/i;
+const GOOD_FRIDAY_PATTERN = /parasceve|sexta.feira santa/i;
+
+/**
+ * Mark abstinence days: every Friday + Ash Wednesday + Good Friday,
+ * except Fridays that are holy days of obligation (feast overrides abstinence).
+ */
+function markAbstinence(days: CalendarDay[]): CalendarDay[] {
+  return days.map((day) => {
+    const dow = new Date(day.date + 'T12:00:00').getDay();
+    const isFriday = dow === 5;
+    const isAshWednesday = ASH_WEDNESDAY_PATTERN.test(day.celebration.name);
+    const isGoodFriday = GOOD_FRIDAY_PATTERN.test(day.celebration.name);
+
+    // Fridays that are holy days of obligation are exempt from abstinence
+    if (isFriday && day.holyDayOfObligation && !isGoodFriday) {
+      return day;
+    }
+
+    if (isFriday || isAshWednesday || isGoodFriday) {
+      return { ...day, abstinence: true };
+    }
+
+    return day;
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Versions to generate
 // ---------------------------------------------------------------------------
 
@@ -208,6 +240,9 @@ async function main(): Promise<void> {
 
           // Mark holy days of obligation (universal + brazil)
           days = markHolyDays(days, ['brazil']);
+
+          // Mark abstinence days (Fridays + Ash Wednesday + Good Friday)
+          days = markAbstinence(days);
 
           // Apply Portuguese translation map
           if (locale.code === 'pt') {

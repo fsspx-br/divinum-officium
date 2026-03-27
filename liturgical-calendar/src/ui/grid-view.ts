@@ -150,12 +150,27 @@ export function renderGrid(
     dayNum.textContent = String(dayOfMonth);
     dayHeader.appendChild(dayNum);
 
+    const icons = document.createElement('span');
+    icons.className = 'day-icons';
+
     if (calDay?.holyDayOfObligation) {
       const holyIcon = document.createElement('span');
       holyIcon.className = 'holy-day-icon';
       holyIcon.textContent = '\u26EA';
       holyIcon.title = t('holyDay.obligation');
-      dayHeader.appendChild(holyIcon);
+      icons.appendChild(holyIcon);
+    }
+
+    if (calDay?.abstinence) {
+      const fishIcon = document.createElement('span');
+      fishIcon.className = 'abstinence-icon';
+      fishIcon.textContent = '\uD83D\uDC1F';
+      fishIcon.title = t('abstinence.day');
+      icons.appendChild(fishIcon);
+    }
+
+    if (icons.childElementCount > 0) {
+      dayHeader.appendChild(icons);
     }
 
     td.appendChild(dayHeader);

@@ -111,6 +111,13 @@ export function renderAgenda(
       holyIcon.title = t('holyDay.obligation');
       celebName.appendChild(holyIcon);
     }
+    if (calDay.abstinence) {
+      const fishIcon = document.createElement('span');
+      fishIcon.className = 'abstinence-icon';
+      fishIcon.textContent = '\uD83D\uDC1F';
+      fishIcon.title = t('abstinence.day');
+      celebName.appendChild(fishIcon);
+    }
     const nameText = document.createTextNode(calDay.celebration.name);
     celebName.appendChild(nameText);
     celebName.title = calDay.celebration.name;
