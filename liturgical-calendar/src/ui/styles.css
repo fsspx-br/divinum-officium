@@ -299,12 +299,24 @@ main {
   background: #faf9f7;
 }
 
+.day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.25rem;
+}
+
 .day-number {
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--ui-text-muted);
-  margin-bottom: 0.25rem;
   line-height: 1;
+}
+
+.holy-day-icon {
+  font-size: 0.65rem;
+  line-height: 1;
+  cursor: default;
 }
 
 .calendar-table td.is-sunday .day-number {
@@ -448,6 +460,9 @@ main {
   color: var(--ui-text);
   white-space: nowrap;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
   text-overflow: ellipsis;
 }
 

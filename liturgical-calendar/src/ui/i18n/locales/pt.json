@@ -38,5 +38,6 @@
   "states.noData": "Sem dados disponíveis para este mês.",
   "states.error": "Não foi possível carregar os dados do calendário para {version} {year}.",
   "states.initError": "Falha ao inicializar a aplicação. Por favor, recarregue a página.",
-  "agenda.also": "Também:"
+  "agenda.also": "Também:",
+  "holyDay.obligation": "Dia de Preceito"
 }

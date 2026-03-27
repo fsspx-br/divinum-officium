@@ -104,7 +104,15 @@ export function renderAgenda(
     // Celebration name
     const celebName = document.createElement('div');
     celebName.className = 'agenda-celebration-name';
-    celebName.textContent = calDay.celebration.name;
+    if (calDay.holyDayOfObligation) {
+      const holyIcon = document.createElement('span');
+      holyIcon.className = 'holy-day-icon';
+      holyIcon.textContent = '\u26EA';
+      holyIcon.title = t('holyDay.obligation');
+      celebName.appendChild(holyIcon);
+    }
+    const nameText = document.createTextNode(calDay.celebration.name);
+    celebName.appendChild(nameText);
     celebName.title = calDay.celebration.name;
 
     // Meta line: rank · season · color

@@ -158,11 +158,24 @@ export function renderGrid(
       td.classList.add('is-sunday');
     }
 
-    // Day number
-    const dayNum = document.createElement('div');
+    // Day number + holy day indicator
+    const dayHeader = document.createElement('div');
+    dayHeader.className = 'day-header';
+
+    const dayNum = document.createElement('span');
     dayNum.className = 'day-number';
     dayNum.textContent = String(dayOfMonth);
-    td.appendChild(dayNum);
+    dayHeader.appendChild(dayNum);
+
+    if (calDay?.holyDayOfObligation) {
+      const holyIcon = document.createElement('span');
+      holyIcon.className = 'holy-day-icon';
+      holyIcon.textContent = '\u26EA';
+      holyIcon.title = t('holyDay.obligation');
+      dayHeader.appendChild(holyIcon);
+    }
+
+    td.appendChild(dayHeader);
 
     // Celebration badge
     if (calDay) {

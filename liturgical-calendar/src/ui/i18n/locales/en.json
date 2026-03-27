@@ -38,5 +38,6 @@
   "states.noData": "No data available for this month.",
   "states.error": "Could not load calendar data for {version} {year}.",
   "states.initError": "Failed to initialise the application. Please reload the page.",
-  "agenda.also": "Also:"
+  "agenda.also": "Also:",
+  "holyDay.obligation": "Holy Day of Obligation"
 }
