@@ -95,8 +95,11 @@ function buildVEVENT(day: CalendarDay, versionLabel: string): string {
   const endDate = new Date(startDate.getTime() + 86400000);
   const dtend = formatICSDate(endDate.toISOString().slice(0, 10));
 
-  // Deterministic UID: date + version slug
-  const versionSlug = versionLabel.replace(/[^a-zA-Z0-9]/g, '-');
+  // Deterministic UID: date + version slug (collapse consecutive hyphens)
+  const versionSlug = versionLabel
+    .replace(/[^a-zA-Z0-9]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
   const uid = `${dtstart}-${versionSlug}@divinum-officium`;
 
   // SUMMARY

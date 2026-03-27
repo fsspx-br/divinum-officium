@@ -11,6 +11,19 @@ docker-compose.override.yml
 # Generated files
 standalone/tools/epubgen2/output
 
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.*
+
+# Logs
+npm-debug.log*
+
 # dev tools
 .idea
 .DS_Store
+.superpowers/
