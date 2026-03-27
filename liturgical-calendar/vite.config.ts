@@ -3,6 +3,7 @@ import { resolve } from 'path';
 
 export default defineConfig({
   root: 'src/ui',
+  base: '/divinum-officium/',
   build: {
     outDir: '../../dist',
     emptyOutDir: true,
