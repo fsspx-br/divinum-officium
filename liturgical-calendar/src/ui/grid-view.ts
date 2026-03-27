@@ -6,13 +6,7 @@
  */
 
 import type { CalendarDay } from '@engine/types';
-
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
-
-const DAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+import { t } from './i18n/i18n';
 
 const MAX_BADGE_LENGTH = 25;
 
@@ -74,7 +68,7 @@ export function renderGrid(
   nav.className = 'month-nav';
 
   const prevBtn = document.createElement('button');
-  prevBtn.textContent = '\u2039 Prev';
+  prevBtn.textContent = t('nav.prev');
   prevBtn.setAttribute('aria-label', 'Previous month');
   prevBtn.addEventListener('click', () => {
     let newMonth = month - 1;
@@ -87,10 +81,10 @@ export function renderGrid(
   });
 
   const heading = document.createElement('h2');
-  heading.textContent = `${MONTH_NAMES[month - 1]} ${year}`;
+  heading.textContent = `${t(`months.${month}`)} ${year}`;
 
   const nextBtn = document.createElement('button');
-  nextBtn.textContent = 'Next \u203a';
+  nextBtn.textContent = t('nav.next');
   nextBtn.setAttribute('aria-label', 'Next month');
   nextBtn.addEventListener('click', () => {
     let newMonth = month + 1;
@@ -114,9 +108,9 @@ export function renderGrid(
   // Header row: Sun–Sat
   const thead = document.createElement('thead');
   const headerRow = document.createElement('tr');
-  for (const dayName of DAY_HEADERS) {
+  for (let d = 0; d < 7; d++) {
     const th = document.createElement('th');
-    th.textContent = dayName;
+    th.textContent = t(`days.${d}`);
     headerRow.appendChild(th);
   }
   thead.appendChild(headerRow);

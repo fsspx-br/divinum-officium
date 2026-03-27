@@ -12,6 +12,7 @@
 import type { CalendarDay } from '@engine/types';
 import { renderGrid } from './grid-view';
 import { renderAgenda } from './agenda-view';
+import { t, getLocale, setLocale, LOCALES, type Locale } from './i18n/i18n';
 
 // ── Version registry ────────────────────────────────────────────────────────
 
@@ -46,6 +47,7 @@ interface AppState {
   currentMonth: number;
   currentVersion: VersionEntry;
   currentView: 'grid' | 'agenda';
+  currentLocale: Locale;
   yearDays: CalendarDay[];
 }
 
@@ -56,6 +58,7 @@ const state: AppState = {
   currentMonth: today.getMonth() + 1, // 1-based
   currentVersion: VERSIONS[0],
   currentView: 'grid',
+  currentLocale: getLocale(),
   yearDays: [],
 };
 
@@ -66,6 +69,7 @@ const yearInput      = document.getElementById('year-input')       as HTMLInputE
 const btnGrid        = document.getElementById('btn-grid')         as HTMLButtonElement;
 const btnAgenda      = document.getElementById('btn-agenda')       as HTMLButtonElement;
 const btnSubscribe   = document.getElementById('btn-subscribe')    as HTMLButtonElement;
+const langSelect     = document.getElementById('lang-select')      as HTMLSelectElement;
 const calendarGrid   = document.getElementById('calendar-grid')    as HTMLDivElement;
 const calendarAgenda = document.getElementById('calendar-agenda')  as HTMLDivElement;
 
@@ -77,7 +81,7 @@ const calendarAgenda = document.getElementById('calendar-agenda')  as HTMLDivEle
  */
 async function loadCalendarData(year: number, version: VersionEntry): Promise<CalendarDay[]> {
   showLoading();
-  const url = `./data/${version.slug}/${year}.json`;
+  const url = `./data/${state.currentLocale}/${version.slug}/${year}.json`;
   try {
     const res = await fetch(url);
     if (!res.ok) {
@@ -86,7 +90,9 @@ async function loadCalendarData(year: number, version: VersionEntry): Promise<Ca
     const data: CalendarDay[] = await res.json();
     return data;
   } catch (err) {
-    showError(`Could not load calendar data for ${version.label} ${year}.\n${err instanceof Error ? err.message : String(err)}`);
+    const msg = t('states.error').replace('{version}', version.label).replace('{year}', String(year));
+    const detail = err instanceof Error ? err.message : String(err);
+    showError(`${msg}\n${detail}`);
     return [];
   }
 }
@@ -94,7 +100,7 @@ async function loadCalendarData(year: number, version: VersionEntry): Promise<Ca
 // ── Rendering ───────────────────────────────────────────────────────────────
 
 function showLoading(): void {
-  const msg = '<p class="state-message">Loading\u2026</p>';
+  const msg = `<p class="state-message">${escapeHtml(t('states.loading'))}</p>`;
   calendarGrid.innerHTML = msg;
   calendarAgenda.innerHTML = msg;
 }
@@ -199,6 +205,41 @@ function populateVersionSelector(): void {
   versionSelect.value = VERSIONS[0].slug;
 }
 
+// ── Language Selector Setup ──────────────────────────────────────────────────
+
+function populateLanguageSelector(): void {
+  for (const loc of LOCALES) {
+    const option = document.createElement('option');
+    option.value = loc.code;
+    option.textContent = loc.label;
+    langSelect.appendChild(option);
+  }
+  langSelect.value = state.currentLocale;
+}
+
+// ── UI String Updates ───────────────────────────────────────────────────────
+
+function updateUIStrings(): void {
+  const title = document.getElementById('app-title');
+  if (title) title.textContent = t('app.title');
+
+  const labelVersion = document.getElementById('label-version');
+  if (labelVersion) labelVersion.textContent = t('controls.version');
+
+  const labelYear = document.getElementById('label-year');
+  if (labelYear) labelYear.textContent = t('controls.year');
+
+  btnGrid.textContent = t('controls.grid');
+  btnAgenda.textContent = t('controls.agenda');
+  btnSubscribe.textContent = t('controls.subscribe');
+
+  // Update data-i18n elements (footer legend)
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const key = el.getAttribute('data-i18n');
+    if (key) el.textContent = t(key);
+  });
+}
+
 // ── Subscribe Button ────────────────────────────────────────────────────────
 
 /**
@@ -214,7 +255,7 @@ async function handleSubscribe(): Promise<void> {
   try {
     await navigator.clipboard.writeText(icsUrl);
     const original = btnSubscribe.textContent;
-    btnSubscribe.textContent = 'Copied!';
+    btnSubscribe.textContent = t('controls.copied');
     setTimeout(() => {
       btnSubscribe.textContent = original;
     }, 2000);
@@ -253,13 +294,24 @@ btnGrid.addEventListener('click', () => switchView('grid'));
 btnAgenda.addEventListener('click', () => switchView('agenda'));
 btnSubscribe.addEventListener('click', handleSubscribe);
 
+langSelect.addEventListener('change', () => {
+  const locale = langSelect.value as Locale;
+  setLocale(locale);
+  state.currentLocale = locale;
+  updateUIStrings();
+  reloadAndRender();
+});
+
 // ── Bootstrap ───────────────────────────────────────────────────────────────
 
 async function init(): Promise<void> {
   populateVersionSelector();
+  populateLanguageSelector();
 
   // Set year input to current year
   yearInput.value = String(state.currentYear);
+
+  updateUIStrings();
 
   // Initial data load and render
   await reloadAndRender();
@@ -267,5 +319,5 @@ async function init(): Promise<void> {
 
 init().catch((err) => {
   console.error('Failed to initialise liturgical calendar UI:', err);
-  showError('Failed to initialise the application. Please reload the page.');
+  showError(t('states.initError'));
 });

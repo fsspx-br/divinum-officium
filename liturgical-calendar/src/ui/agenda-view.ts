@@ -9,13 +9,7 @@
  */
 
 import type { CalendarDay } from '@engine/types';
-
-const DOW_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
+import { t } from './i18n/i18n';
 
 /**
  * Capitalise the first letter of a string.
@@ -52,7 +46,7 @@ export function renderAgenda(
   const nav = document.createElement('div');
   nav.className = 'month-nav';
   const heading = document.createElement('h2');
-  heading.textContent = `${MONTH_NAMES[month - 1]} ${year}`;
+  heading.textContent = `${t(`months.${month}`)} ${year}`;
   nav.appendChild(heading);
   container.appendChild(nav);
 
@@ -63,7 +57,7 @@ export function renderAgenda(
   if (monthDays.length === 0) {
     const msg = document.createElement('p');
     msg.className = 'state-message';
-    msg.textContent = 'No data available for this month.';
+    msg.textContent = t('states.noData');
     container.appendChild(msg);
     return;
   }
@@ -74,7 +68,7 @@ export function renderAgenda(
 
   for (const calDay of monthDays) {
     const dateObj = new Date(calDay.date + 'T00:00:00'); // local noon to avoid DST issues
-    const dow = DOW_ABBR[dateObj.getDay()];
+    const dow = t(`days.${dateObj.getDay()}`);
     const dayNum = dateObj.getDate();
     const isSunday = dateObj.getDay() === 0;
 
@@ -135,7 +129,7 @@ export function renderAgenda(
 
     const colorLabel = document.createElement('span');
     colorLabel.className = 'agenda-color-label';
-    colorLabel.textContent = capitalize(calDay.color);
+    colorLabel.textContent = t(`colors.${calDay.color}`);
 
     meta.appendChild(rankEl);
     meta.appendChild(sep1);
@@ -151,7 +145,7 @@ export function renderAgenda(
       const comms = document.createElement('div');
       comms.className = 'agenda-commemorations';
       comms.title = calDay.commemorations.join('; ');
-      comms.textContent = 'Also: ' + calDay.commemorations.join(', ');
+      comms.textContent = t('agenda.also') + ' ' + calDay.commemorations.join(', ');
       details.appendChild(comms);
     }
 
