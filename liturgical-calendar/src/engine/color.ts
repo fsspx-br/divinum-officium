@@ -53,8 +53,8 @@ export function getLiturgicalColor(
     return 'rose';
   }
 
-  // 4. Laetare Sunday (4th Sunday of Lent)
-  if (/dominica.*iv.*quadragesima|iv.*in quadragesima/i.test(name) || /laetare/i.test(name)) {
+  // 4. Laetare Sunday (4th Sunday of Lent) — only the Sunday itself, not the week's ferias
+  if (/dominica.*iv.*quadragesima/i.test(name) || /laetare/i.test(name)) {
     return 'rose';
   }
 
@@ -112,11 +112,12 @@ export function getLiturgicalColor(
     return 'white';
   }
 
-  // 13. Named feasts in Lent/Advent: rank ≥ 2, not feria/dominica
+  // 13. Named saints/feasts in Lent/Advent: rank ≥ 2, not feria/dominica/Sunday
   if (
     (season === 'lent' || season === 'passiontide' || season === 'advent') &&
     numericRank >= 2 &&
     !/feria|sabbato|dominica/i.test(rankLower) &&
+    !/dominica/i.test(name) &&
     name.trim() !== ''
   ) {
     return 'white';

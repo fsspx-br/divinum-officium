@@ -129,10 +129,11 @@ export function getRankFromFile(officeDir: string, filename: string, version: st
     return '';
   }
 
-  // Handle file-level @redirect: entire file is just "@SomeOther/File"
-  const trimmedContent = content.trim();
-  if (trimmedContent.startsWith('@') && !trimmedContent.includes('\n')) {
-    const redirectTarget = trimmedContent.slice(1).trim();
+  // Handle file-level @redirect: first line starts with "@SomeOther/File"
+  // Some files have @ on first line followed by additional content (e.g. Quad6-6r.txt)
+  const firstLine = content.split('\n')[0].trim();
+  if (firstLine.startsWith('@')) {
+    const redirectTarget = firstLine.slice(1).trim();
     return getRankFromFile(officeDir, redirectTarget, version, depth + 1);
   }
 
@@ -496,10 +497,10 @@ function extractNameFromFile(officeDir: string, filename: string, depth = 0): st
     return filename;
   }
 
-  // Handle file-level @redirect
-  const trimmedContent = content.trim();
-  if (trimmedContent.startsWith('@') && !trimmedContent.includes('\n')) {
-    return extractNameFromFile(officeDir, trimmedContent.slice(1).trim(), depth + 1);
+  // Handle file-level @redirect (first line starts with @)
+  const firstLine = content.split('\n')[0].trim();
+  if (firstLine.startsWith('@')) {
+    return extractNameFromFile(officeDir, firstLine.slice(1).trim(), depth + 1);
   }
 
   const lines = content.split('\n');

@@ -246,6 +246,7 @@ export function seasonFromWeekRef(weekRef: string): Season {
   if (weekRef.startsWith('PentEpi')) return 'epiphany';
   if (weekRef.startsWith('Epi')) return 'epiphany';
   if (weekRef.startsWith('Quadp')) return 'septuagesima';
+  if (weekRef === 'Quad5' || weekRef === 'Quad6' || weekRef.startsWith('Quad5-') || weekRef.startsWith('Quad6-')) return 'passiontide';
   if (weekRef.startsWith('Quad')) return 'lent';
   if (weekRef.startsWith('Pasc')) return 'easter';
   if (weekRef.startsWith('Pent')) return 'pentecost';

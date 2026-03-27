@@ -32,6 +32,10 @@ jobs:
         working-directory: liturgical-calendar
         run: npm ci
 
+      - name: Run tests
+        working-directory: liturgical-calendar
+        run: npx vitest run
+
       - name: Generate ICS and JSON data
         working-directory: liturgical-calendar
         run: npx tsx src/build/generate-ics.ts
