@@ -8,23 +8,6 @@
 import type { CalendarDay } from '@engine/types';
 import { t } from './i18n/i18n';
 
-const MAX_BADGE_LENGTH = 25;
-
-/**
- * Abbreviate a celebration name to at most `max` characters.
- * Tries to cut on word boundaries; always appends ellipsis if truncated.
- */
-function abbreviate(name: string, max: number = MAX_BADGE_LENGTH): string {
-  if (name.length <= max) return name;
-  const truncated = name.slice(0, max - 1).trimEnd();
-  // Try to find a word boundary to cut on
-  const lastSpace = truncated.lastIndexOf(' ');
-  if (lastSpace > max * 0.5) {
-    return truncated.slice(0, lastSpace) + '\u2026';
-  }
-  return truncated + '\u2026';
-}
-
 /**
  * Build a lookup map: ISO date string → CalendarDay
  */
@@ -181,7 +164,7 @@ export function renderGrid(
     if (calDay) {
       const badge = document.createElement('span');
       badge.className = `celebration-badge color-${calDay.color}`;
-      badge.textContent = abbreviate(calDay.celebration.name);
+      badge.textContent = calDay.celebration.name;
       badge.title = calDay.celebration.name; // full name on hover
       td.appendChild(badge);
     }
