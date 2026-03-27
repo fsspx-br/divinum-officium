@@ -40,10 +40,12 @@ interface LocaleConfig {
   officeDir: string;
 }
 
+const LATIN_OFFICE_DIR = resolve(__dirname, '../../../web/www/horas/Latin');
+
 const LOCALES: LocaleConfig[] = [
   { code: 'en', officeDir: resolve(__dirname, '../../../web/www/horas/English') },
   { code: 'pt', officeDir: resolve(__dirname, '../../../web/www/horas/Portugues') },
-  { code: 'la', officeDir: resolve(__dirname, '../../../web/www/horas/Latin') },
+  { code: 'la', officeDir: LATIN_OFFICE_DIR },
 ];
 
 // ---------------------------------------------------------------------------
@@ -85,7 +87,8 @@ async function main(): Promise<void> {
     console.log(`  data:   ${DATA_DIR}`);
     console.log(`  office: ${locale.officeDir}`);
 
-    const calendar = new LiturgicalCalendar(DATA_DIR, locale.officeDir);
+    const fallback = locale.officeDir !== LATIN_OFFICE_DIR ? LATIN_OFFICE_DIR : undefined;
+    const calendar = new LiturgicalCalendar(DATA_DIR, locale.officeDir, fallback);
 
     const available = new Set(calendar.getVersions());
     const missing = VERSIONS.filter((v) => !available.has(v));

@@ -117,7 +117,7 @@ function conditionMatchesVersion(condition: string, version: string): boolean {
  * The logic: Start with the base [Rank] line, then if a `(sed rubrica ...)` or
  * `(rubrica ...)` condition matches the version, use the line following it instead.
  */
-export function getRankFromFile(officeDir: string, filename: string, version: string, depth = 0): string {
+export function getRankFromFile(officeDir: string, filename: string, version: string, depth = 0, fallbackOfficeDir?: string): string {
   if (depth > 5) return ''; // Prevent infinite redirect loops
 
   const filePath = resolve(officeDir, filename.endsWith('.txt') ? filename : `${filename}.txt`);
@@ -126,6 +126,20 @@ export function getRankFromFile(officeDir: string, filename: string, version: st
   try {
     content = readFileSync(filePath, 'utf-8');
   } catch {
+    // File not found in primary dir — try fallback (e.g. Latin) to resolve redirects
+    if (fallbackOfficeDir && fallbackOfficeDir !== officeDir) {
+      const fbPath = resolve(fallbackOfficeDir, filename.endsWith('.txt') ? filename : `${filename}.txt`);
+      try {
+        const fbContent = readFileSync(fbPath, 'utf-8');
+        const fbFirst = fbContent.split('\n')[0].trim();
+        if (fbFirst.startsWith('@')) {
+          // Fallback file is a redirect — follow it back in the primary dir
+          return getRankFromFile(officeDir, fbFirst.slice(1).trim(), version, depth + 1, fallbackOfficeDir);
+        }
+      } catch { /* fallback file also missing */ }
+      // Fallback file exists but isn't a redirect — read rank from fallback directly
+      return getRankFromFile(fallbackOfficeDir, filename, version, depth, undefined);
+    }
     return '';
   }
 
@@ -134,7 +148,7 @@ export function getRankFromFile(officeDir: string, filename: string, version: st
   const firstLine = content.split('\n')[0].trim();
   if (firstLine.startsWith('@')) {
     const redirectTarget = firstLine.slice(1).trim();
-    return getRankFromFile(officeDir, redirectTarget, version, depth + 1);
+    return getRankFromFile(officeDir, redirectTarget, version, depth + 1, fallbackOfficeDir);
   }
 
   const lines = content.split('\n');
@@ -206,7 +220,12 @@ export function getRankFromFile(officeDir: string, filename: string, version: st
     }
   }
 
-  return selectedRank || baseRank;
+  const result = selectedRank || baseRank;
+  // If no [Rank] found in locale file, try fallback (e.g. Latin has rank metadata)
+  if (!result && fallbackOfficeDir && fallbackOfficeDir !== officeDir) {
+    return getRankFromFile(fallbackOfficeDir, filename, version, depth, undefined);
+  }
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -220,6 +239,7 @@ export function resolveOccurrence(
   version: string,
   dir: Directorium,
   officeDir: string,
+  fallbackOfficeDir?: string,
 ): OccurrenceResult {
   const dow = dayOfWeek(day, month, year);
   const weekRef = getWeek(day, month, year);
@@ -255,12 +275,12 @@ export function resolveOccurrence(
   let tParsed: ParsedRank = { name: '', rankType: '', numericRank: 0 };
 
   if (tfile) {
-    tRankStr = getRankFromFile(officeDir, tfile, version);
+    tRankStr = getRankFromFile(officeDir, tfile, version, 0, fallbackOfficeDir);
     if (tRankStr) {
       tParsed = parseRankField(tRankStr);
       // If the [Rank] name field is empty, populate from [Officium]
       if (!tParsed.name) {
-        tParsed = { ...tParsed, name: extractNameFromFile(officeDir, tfile) };
+        tParsed = { ...tParsed, name: extractNameFromFile(officeDir, tfile, 0, fallbackOfficeDir) };
       }
     }
   }
@@ -326,11 +346,11 @@ export function resolveOccurrence(
   let sParsed: ParsedRank = { name: '', rankType: '', numericRank: 0 };
 
   if (sfile) {
-    sRankStr = getRankFromFile(officeDir, sfile, version);
+    sRankStr = getRankFromFile(officeDir, sfile, version, 0, fallbackOfficeDir);
     if (sRankStr) {
       sParsed = parseRankField(sRankStr);
       if (!sParsed.name) {
-        sParsed = { ...sParsed, name: extractNameFromFile(officeDir, sfile) };
+        sParsed = { ...sParsed, name: extractNameFromFile(officeDir, sfile, 0, fallbackOfficeDir) };
       }
     }
   }
@@ -437,7 +457,7 @@ export function resolveOccurrence(
     }
     // Add any sanctoral commemoration candidates
     for (const c of commemoCandidates) {
-      const cRank = getRankFromFile(officeDir, c, version);
+      const cRank = getRankFromFile(officeDir, c, version, 0, fallbackOfficeDir);
       if (cRank) {
         const parsed = parseRankField(cRank);
         if (parsed.name) {
@@ -448,7 +468,7 @@ export function resolveOccurrence(
 
     return {
       celebration: {
-        name: sParsed.name || extractNameFromFile(officeDir, sfile),
+        name: sParsed.name || extractNameFromFile(officeDir, sfile, 0, fallbackOfficeDir),
         rank: sParsed.numericRank,
         rankName: sParsed.rankType,
         source: 'sanctoral',
@@ -465,7 +485,7 @@ export function resolveOccurrence(
 
     return {
       celebration: {
-        name: tParsed.name || extractNameFromFile(officeDir, tfile),
+        name: tParsed.name || extractNameFromFile(officeDir, tfile, 0, fallbackOfficeDir),
         rank: tParsed.numericRank,
         rankName: tParsed.rankType,
         source: 'temporal',
@@ -485,7 +505,7 @@ export function resolveOccurrence(
  * Extract the office name from the [Officium] section of a file.
  * Used as fallback when the [Rank] field has no name component.
  */
-function extractNameFromFile(officeDir: string, filename: string, depth = 0): string {
+function extractNameFromFile(officeDir: string, filename: string, depth = 0, fallbackOfficeDir?: string): string {
   if (!filename || depth > 5) return filename || '';
 
   const filePath = resolve(officeDir, filename.endsWith('.txt') ? filename : `${filename}.txt`);
@@ -494,13 +514,25 @@ function extractNameFromFile(officeDir: string, filename: string, depth = 0): st
   try {
     content = readFileSync(filePath, 'utf-8');
   } catch {
+    // File not found — try fallback to resolve redirects
+    if (fallbackOfficeDir && fallbackOfficeDir !== officeDir) {
+      const fbPath = resolve(fallbackOfficeDir, filename.endsWith('.txt') ? filename : `${filename}.txt`);
+      try {
+        const fbContent = readFileSync(fbPath, 'utf-8');
+        const fbFirst = fbContent.split('\n')[0].trim();
+        if (fbFirst.startsWith('@')) {
+          return extractNameFromFile(officeDir, fbFirst.slice(1).trim(), depth + 1, fallbackOfficeDir);
+        }
+      } catch { /* fallback also missing */ }
+      return extractNameFromFile(fallbackOfficeDir, filename, depth, undefined);
+    }
     return filename;
   }
 
   // Handle file-level @redirect (first line starts with @)
   const firstLine = content.split('\n')[0].trim();
   if (firstLine.startsWith('@')) {
-    return extractNameFromFile(officeDir, firstLine.slice(1).trim(), depth + 1);
+    return extractNameFromFile(officeDir, firstLine.slice(1).trim(), depth + 1, fallbackOfficeDir);
   }
 
   const lines = content.split('\n');

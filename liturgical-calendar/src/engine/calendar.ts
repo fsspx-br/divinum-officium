@@ -30,11 +30,13 @@ function daysInMonth(year: number, month: number): number {
 export class LiturgicalCalendar {
   private dataDir: string;
   private officeDir: string;
+  private fallbackOfficeDir?: string;
   private dir: Directorium;
 
-  constructor(dataDir: string, officeDir: string) {
+  constructor(dataDir: string, officeDir: string, fallbackOfficeDir?: string) {
     this.dataDir = dataDir;
     this.officeDir = officeDir;
+    this.fallbackOfficeDir = fallbackOfficeDir;
     this.dir = new Directorium(dataDir);
   }
 
@@ -53,7 +55,7 @@ export class LiturgicalCalendar {
     const month = date.getMonth() + 1; // JS months are 0-indexed
     const year = date.getFullYear();
 
-    const result = resolveOccurrence(day, month, year, version, this.dir, this.officeDir);
+    const result = resolveOccurrence(day, month, year, version, this.dir, this.officeDir, this.fallbackOfficeDir);
 
     const season = seasonFromWeekRef(result.weekRef);
 
