@@ -8,10 +8,6 @@ Ss. Marii, Marthæ, Audifacis, et Abachum Martyrum
 vide C3a;
 Gloria
 
-[Oratio]
-Exáudi, Dómine, pópulum tuum cum Sanctórum tuórum patrocínio supplicántem: ut et temporális vitæ nos tríbuas pace gaudére; et ætérnæ reperíre subsídium.
-$Per Dominum
-
 [Introitus]
 !Ps 67:4
 v. Justi epuléntur et exsúltent in conspéctu Dei et delecténtur in lætítia.
@@ -19,6 +15,10 @@ v. Justi epuléntur et exsúltent in conspéctu Dei et delecténtur in lætítia
 Exsúrgat Deus, et dissipéntur inimíci ejus: et fúgiant qui odérunt eum, a fácie ejus.
 &Gloria
 v. Justi epuléntur et exsúltent in conspéctu Dei et delecténtur in lætítia.
+
+[Oratio]
+Exáudi, Dómine, pópulum tuum cum Sanctórum tuórum patrocínio supplicántem: ut et temporális vitæ nos tríbuas pace gaudére; et ætérnæ reperíre subsídium.
+$Per Dominum
 
 [Lectio]
 @Commune/C3a-1
@@ -40,7 +40,7 @@ V. Veniéntes autem vénient cum exsultatióne, portántes manípulos suos.
 [Evangelium]
 Sequéntia ++ sancti Evangélii secúndum Matthǽum
 !Matt 24:3-13
-In illo témpore: Sedénte Jesu super montem Olivéti, accessérunt ad eum discípuli secréto, dicéntes: Dic nobis, quando hæc erunt? et quod signum advéntus tui et consummatiónis sǽculi? Et respóndens Jesus, dixit eis: Vidéte, ne quis vos sedúcat. Multi enim vénient in nómine meo, dicéntes: Ego sum Christus: et multos sedúcent. Auditúri enim estis prælia et opiniónes prœliórum. Vidéte, ne turbémini. Opórtet enim hæc fíeri, sed nondum est finis. Consúrget enim gens in gentem, et regnum in regnum, et erunt pestiléntiæ et fames et terræmótus per loca. Hæc autem ómnia inítia sunt dolórum. Tunc tradent vos in tribulatiónem et occídent vos: et éritis odio ómnibus géntibus propter nomen meum. Et tunc scandalizabúntur multi, et ínvicem tradent, et odio habébunt ínvicem. Et multi pseudoprophétæ surgent, et sedúcent multos. Et quóniam abundávit iníquitas, refrigéscet cáritas multórum. Qui autem perseveráverit usque in finem, hic salvus erit.
+In illo témpore: Sedénte Jesu super montem Olivéti, accessérunt ad eum discípuli secréto, dicéntes: Dic nobis, quando hæc erunt? et quod signum advéntus tui et consummatiónis sǽculi? ¶ Et respóndens Jesus, dixit eis: Vidéte, ne quis vos sedúcat. Multi enim vénient in nómine meo, dicéntes: Ego sum Christus: et multos sedúcent. Auditúri enim estis prælia et opiniónes prœliórum. Vidéte, ne turbémini. Opórtet enim hæc fíeri, sed nondum est finis. Consúrget enim gens in gentem, et regnum in regnum, et erunt pestiléntiæ et fames et terræmótus per loca. Hæc autem ómnia inítia sunt dolórum. Tunc tradent vos in tribulatiónem et occídent vos: et éritis odio ómnibus géntibus propter nomen meum. Et tunc scandalizabúntur multi, et ínvicem tradent, et odio habébunt ínvicem. Et multi pseudoprophétæ surgent, et sedúcent multos. Et quóniam abundávit iníquitas, refrigéscet cáritas multórum. Qui autem perseveráverit usque in finem, hic salvus erit.
 
 [Offertorium]
 !Ps 128:7

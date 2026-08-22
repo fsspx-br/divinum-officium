@@ -81,12 +81,12 @@ require "$Bin/specials.pl";
 require "$Bin/specmatins.pl";
 
 if (-e "$Bin/monastic.pl") { require "$Bin/monastic.pl"; }
+
 require "$Bin/webdia.pl";
 require "$Bin/altovadum.pl";
 require "./Ewebdia.pl";
 require "$Bin/horasjs.pl";
 
-#require "$Bin/tfertable.pl";
 use lib "$Bin/../../../web/cgi-bin";
 use DivinumOfficium::LanguageTextTools qw(load_languages_data);
 use DivinumOfficium::RunTimeOptions qw(check_version check_language);

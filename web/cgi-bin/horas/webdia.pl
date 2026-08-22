@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 use utf8;
+use DivinumOfficium::Lexicon qw(apply_interlinear);
 
 # Name : Laszlo Kiss
 # Date : 01-11-04
@@ -15,6 +16,8 @@ sub htmlHead {
   print "Content-type: text/html; charset=utf-8\n\n";
 
   return if our $content;
+
+  our ($whitebground);
 
   my ($title, $onload) = @_;
 
@@ -33,6 +36,11 @@ PrintTag
 
   my $is_mobile = ($officium eq 'Pofficium.pl');
   my $viewport_tag = $is_mobile ? '  <META NAME="viewport" CONTENT="width=device-width, initial-scale=0.75">' : '';
+  my $gf = our $glossfont;
+  my $gloss_color = ($gf =~ /(\#[0-9a-fA-F]+)\s*$/ || $gf =~ /([a-zA-Z]+)\s*$/) ? $1 : '';
+  $gloss_color = '' if $gloss_color eq 'italic' || $gloss_color eq 'bold';
+  my $gloss_weight = ($gf =~ /\bbold\b/) ? 'bold' : 'normal';
+  my $gloss_style = ($gf =~ /\bitalic\b/) ? 'italic' : 'normal';
 
   print <<"PrintTag";
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
@@ -76,10 +84,35 @@ $viewport_tag
     }
     .contrastbg { background: white; }
     .nigra { color: black; }
-
+    .lw .gloss { display: none; }
+    body.interlinear-hint .lw { cursor: pointer; }
+    body.interlinear-hint .lw.revealed .gloss { display: inline; font-size: 0.85em;${\($gloss_color ? " color: $gloss_color;" : '')} font-weight: $gloss_weight; font-style: $gloss_style; }
+    body.interlinear-all .lw .gloss { display: inline; font-size: 0.85em;${\($gloss_color ? " color: $gloss_color;" : '')} font-weight: $gloss_weight; font-style: $gloss_style; }
+    body.interlinear-all .lw.learned .gloss { display: none; }
+    body.interlinear-all .lw { cursor: pointer; }
 PrintTag
 
-  if (our $whitebground) {
+  if ($version =~ /Cist/) {
+    my $currentColor = $whitebground ? 'white' : 'black';
+
+    # Cistercian flexa from large choir Psalterium/Antiphonale Cisterciense (1952/1903)
+    # 1 .. from Psalterium
+    print <<"PrintTag";
+    .cistflex {
+        content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-10 0 547 800'%3E%3Cstyle%3E \@media (prefers-color-scheme: dark) { path { fill: $currentColor }} %3C/style%3E%3Cpath d='M139,258C90,258 36,230 36,175C36,149 64,103 94,103C109,103 120,108 131,119C141,129 149,137 155,144C173,165 225,170 251,170C289,170 330,161 374,144L462,110C463,111 464,113 464,115C464,120 459,128 449,139C437,152 420,169 399,188C306,272 250,332 232,367C215,400 206,428 206,451C206,501 252,514 293,514C371,514 439,453 475,388C492,405 501,415 501,418C484,468 456,511 417,547C371,584 327,604 285,606C279,606 273,606 267,607C198,607 150,588 121,550C102,525 92,499 92,472C92,437 109,400 144,363C214,289 273,237 324,208C309,213 296,218 286,222C227,246 178,258 139,258ZM263,773C228,773 200,745 200,710C200,674 227,647 263,647C299,647 325,675 325,710C325,744 298,773 263,773Z'/%3E%3C/svg%3E");
+        height: 0.8em;
+    }
+PrintTag
+
+    # 2 .. from Breviarium Cist.
+    # .cistflex {
+    #     content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-10 0 661 1000'%3E%3Cpath fill='$currentColor' d='M130 634c-13 -26 -20 -52 -19 -79c0 -109 72 -168 157 -226c74 -46 149 -96 209 -159c-56 29 -135 44 -238 44c-41 0 -106 -22 -122 -62c-4 -10 -3 -21 2 -34c6 -15 18 -32 36 -32c12 0 36 10 47 15c14 6 28 13 44 19c35 20 93 31 133 31c46 0 90 -17 129 -40 c5 -3 8 -4 11 -5c1 -1 3 -1 4 -1c4 0 6 4 8 11c3 11 2 19 -3 25c-53 64 -111 129 -174 183c-21 20 -40 38 -56 56c-48 45 -88 107 -88 174c0 82 40 173 135 173c59 0 91 -54 117 -100c4 -7 6 -13 8 -21c6 -12 8 -26 8 -40c1 -9 1 -15 2 -20c0 -4 0 -11 -2 -21 c0 -10 -1 -16 -2 -19c0 -3 -1 -9 -2 -20s-3 -17 -3 -18c35 19 59 48 69 87c5 19 5 39 0 61c-11 50 -52 103 -95 128c-33 15 -65 20 -101 20c-56 0 -123 -25 -163 -64c-21 -18 -38 -41 -51 -66zM293 854c0 -27 24 -48 50 -50c28 0 47 23 49 50c0 26 -18 49 -45 49 c-30 0 -54 -17 -54 -49z'/%3E%3C/svg%3E");
+    #     height: 1em;
+    #     vertical-align: middle;
+    # }
+  }
+
+  if ($whitebground) {
     print <<"PrintTag";
     \@media (prefers-color-scheme: dark) {
       body {
@@ -123,12 +156,14 @@ PrintTag
 PrintTag
   }
 
+  my $mode = (our $interlinear) // 'disabled';
+  my $interlinear_class = ($mode eq 'hint' || $mode eq 'all') ? qq( class="interlinear-$mode") : '';
   print <<"PrintTag";
   </STYLE>
   <TITLE>$title</TITLE>
 $horasjs
 </HEAD>
-<BODY $onload onresize="layoutChant()">
+<BODY$interlinear_class $onload onresize="layoutChant()">
 <FORM ACTION="$officium" METHOD="post" TARGET="_self">
 PrintTag
 }
@@ -383,6 +418,7 @@ sub getcookies {
       # $error = "Cookie $cname mismatch $name need $check has $param<br/>== $sti[-1]";
       return 0;
     }
+    pop @sti;    # remove check string so it never maps to a param slot
     setsetup($name, @sti);
     return 1;
   }
@@ -568,7 +604,7 @@ sub setcell {
     # Merge Absolutio, Benedictio and remove redundant Amen.
     $text =~
       s/\(([fd])\.\) \(\:\:\)\}(?:\s|\_|\<br\/\>)*\{(?:initial\-style\:0\;\%\%)\(c[34]\) (R\/. A\([gh]\.?\)men)/($1.) (::) $2/gs;
-    $text =~ s/(?<=R\/.\s?A\([defgh]\.?\)men\.\([defgh]\.?\) \(\:\:\))\s?R\/. A\([gh]\.?\)men\.\([gh]\.?\) \(\:\:\)//g;
+    $text =~ s/(R\/.\s?A\([defgh]\.?\)men\.\([defgh]\.?\) \(\:\:\))\s?R\/. A\([gh]\.?\)men\.\([gh]\.?\) \(\:\:\)/$1/g;
 
     # Merge Chapter, Lectio brevis, and Martyrolgium with Deo gratias / Tu autem / Et álibi
     $text =~
@@ -663,17 +699,9 @@ sub setcell {
   $text =~ s/\s\&\s/ &amp; /;                                  # HTML - Ampersand;
   $text =~
     s/↊|\&\#x218a\;/<span style='color:grey; display:inline-block; transform: rotate(180deg) translate(-40%, 15%);'>2<\/span><span style='color:grey; display:inline-block; transform: translate(-100%, 16%);'>.<\/span>/gu;
-  my $cist_flex = 1;    # 1 .. from Psalterium - 2 .. from Breviarium Cist.
-                        # Cistercian flexa from large choir Psalterium/Antiphonale Cisterciense (1952/1903)
-  $text =~
-    s{§|†}{<svg viewBox="-10 0 547 800" style="height: 0.8em;"><path fill="currentColor" d="M139,258C90,258 36,230 36,175C36,149 64,103 94,103C109,103 120,108 131,119C141,129 149,137 155,144C173,165 225,170 251,170C289,170 330,161 374,144L462,110C463,111 464,113 464,115C464,120 459,128 449,139C437,152 420,169 399,188C306,272 250,332 232,367C215,400 206,428 206,451C206,501 252,514 293,514C371,514 439,453 475,388C492,405 501,415 501,418C484,468 456,511 417,547C371,584 327,604 285,606C279,606 273,606 267,607C198,607 150,588 121,550C102,525 92,499 92,472C92,437 109,400 144,363C214,289 273,237 324,208C309,213 296,218 286,222C227,246 178,258 139,258ZM263,773C228,773 200,745 200,710C200,674 227,647 263,647C299,647 325,675 325,710C325,744 298,773 263,773Z"/></svg>}gu
-    if $version =~ /cist/i && $cist_flex != 2;
 
-  # Cistercian flexa from Breviarium Cisterciense (1951)
-  $text =~
-    s{§|†}{<svg viewBox="-10 0 661 1000" style="height: 1em; vertical-align: middle;"><path fill="currentColor" d="M130 634c-13 -26 -20 -52 -19 -79c0 -109 72 -168 157 -226c74 -46 149 -96 209 -159c-56 29 -135 44 -238 44c-41 0 -106 -22 -122 -62c-4 -10 -3 -21 2 -34c6 -15 18 -32 36 -32c12 0 36 10 47 15c14 6 28 13 44 19c35 20 93 31 133 31c46 0 90 -17 129 -40 c5 -3 8 -4 11 -5c1 -1 3 -1 4 -1c4 0 6 4 8 11c3 11 2 19 -3 25c-53 64 -111 129 -174 183c-21 20 -40 38 -56 56c-48 45 -88 107 -88 174c0 82 40 173 135 173c59 0 91 -54 117 -100c4 -7 6 -13 8 -21c6 -12 8 -26 8 -40c1 -9 1 -15 2 -20c0 -4 0 -11 -2 -21 c0 -10 -1 -16 -2 -19c0 -3 -1 -9 -2 -20s-3 -17 -3 -18c35 19 59 48 69 87c5 19 5 39 0 61c-11 50 -52 103 -95 128c-33 15 -65 20 -101 20c-56 0 -123 -25 -163 -64c-21 -18 -38 -41 -51 -66zM293 854c0 -27 24 -48 50 -50c28 0 47 23 49 50c0 26 -18 49 -45 49 c-30 0 -54 -17 -54 -49z"/></svg>}gu
-    if $version =~ /cist/i && $cist_flex == 2;
-  $text =~ s/§/†/gi if $version !~ /cist/i;
+  $text =~ s/§/†/g;
+  $text =~ s{†}{<i class="cistflex"></i>}g if $version =~ /Cist/;
 
   # Remove line breaks from chants
   if ($lang =~ /gabc/i) {
@@ -690,6 +718,14 @@ sub setcell {
       push(@ctext2, $text);
     }
     return if $missa || $singleCell;
+  }
+
+  if ( (our $interlinear)
+    && (our $interlinear) ne 'disabled'
+    && $lang =~ /Latin/i
+    && $lang !~ /gabc/i)
+  {
+    $text = apply_interlinear($text);
   }
 
   # Actually Print cell and close it
@@ -852,9 +888,14 @@ sub selectables {
 #*** selectable_p
 # generate signle select from .dialog for Poffice
 sub selectable_p {
-  my ($dialog, $curvalue, $date1, $version, $lang2, $votive, $title) = @_;
+  my ($dialog, $curvalue, $date1, $version, $lang2, $votive, $dioecesis, $title) = @_;
   $title ||= ucfirst($dialog);
-  if ($dialog eq 'votives') { $curvalue ||= 'Hodie' }
+
+  if ($dialog eq 'votives') {
+    $curvalue ||= 'Hodie';
+  } elsif ($dialog eq 'dioecesis') {
+    $curvalue ||= 'Generale';
+  }
   my @output = ("<TR><TD ALIGN='CENTER'>$title");
 
   foreach (getdialog($dialog)) {
@@ -868,7 +909,9 @@ sub selectable_p {
       . "&lang2="
       . ($dialog eq 'languages' ? $name : $lang2)
       . "&votive="
-      . ($dialog eq 'votives' ? $name : $votive);
+      . ($dialog eq 'votives' ? $name : $votive)
+      . "&dioecesis="
+      . ($dialog eq 'dioecesis' ? $name : $dioecesis);
     my $colour = $curvalue eq $name ? 'red' : '';
     push(@output, qq(\n<A HREF="$href"><FONT COLOR=$colour>$text</FONT></A>));
   }
@@ -876,7 +919,7 @@ sub selectable_p {
 }
 
 sub horas_menu {
-  my ($completed, $date1, $version, $lang2, $votive) = @_;
+  my ($completed, $date1, $version, $lang2, $votive, $dioecesis) = @_;
   my @horas = gethoras($votive eq 'C9');
   push(@horas, 'Omnes', 'Plures') if ($0 !~ /Cofficium/);
 
@@ -889,7 +932,8 @@ sub horas_menu {
     my $onclick = '';
 
     if ($0 =~ /Pofficium/) {
-      $href = qq("Pofficium.pl?date1=$date1&command=pray$_) . qq(&version=$version&lang2=$lang2&votive=$votive");
+      $href = qq("Pofficium.pl?date1=$date1&command=pray$_)
+        . qq(&version=$version&lang2=$lang2&votive=$votive&dioecesis=$dioecesis");
     } else {
       $onclick = qq(onclick="hset('$_');");
     }
@@ -916,7 +960,8 @@ sub horas_menu {
 
   my $a =
     ($0 =~ /Pofficium/)
-    ? qq(HREF="Pofficium.pl?date1=$date1&command=Appendix Index) . qq(&version=$version&lang2=$lang2&votive=$votive")
+    ? qq(HREF="Pofficium.pl?date1=$date1&command=Appendix Index)
+    . qq(&version=$version&lang2=$lang2&votive=$votive&dioecesis=$dioecesis")
     : qq(HREF="#" onclick="appendix('Index')");
   $output .= qq(\n<A $a><FONT COLOR=$colour>Appendix</FONT></A>\n) if ($0 !~ /Cofficium/);
   $output;

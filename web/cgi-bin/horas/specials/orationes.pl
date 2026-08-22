@@ -52,7 +52,7 @@ sub oratio {
     $rule .= "Oratio Dominica\n";
   }
 
-  if ( ($rule =~ /Oratio Dominica/i && (!exists($winner{Oratio}) || $hora eq 'Vespera'))
+  if ($rule =~ /Oratio Dominica/i
     || ($winner{Rank} =~ /Quattuor/i && $dayname[0] !~ /Pasc7/i && $version !~ /196|cist/i && $hora eq 'Vespera'))
   {
     my $name = "$dayname[0]-0";
@@ -311,6 +311,7 @@ sub oratio {
               && $winner =~ /Sancti/i
               && $winner !~ /08\-14|06\-23|06\-28|08\-09/)
           ) {
+            setbuild2("Discarded from winner: $ic");
             next;
           }
           if ($ic !~ /^!/) { $ic = "!$ic"; }
@@ -464,7 +465,7 @@ sub oratio {
         if (!(-e "$datafolder/$lang/$commemo") && $commemo !~ /txt$/i) { $commemo =~ s/$/\.txt/; }
         %c = %{officestring('Latin', $commemo, 0)};
 
-        if ($c{Rank} =~ /in.*octavam/i && $octvespera) {
+        if ($c{Rank} =~ /in.*octavam|post Octavam Asc/i && $octvespera) {
           $c = getcommemoratio($commemo, $octvespera, $lang);
           setbuild2("Substitute Commemoratio of Octave to $octvespera");
         } else {
@@ -692,6 +693,7 @@ sub getcommemoratio {
     $file = "$file.txt";
     if ($file =~ /^C/) { $file = subdirname('Commune', $version) . "$file"; }
     %c = %{setupstring($lang, $file)};
+    $c{'Versum 3'} = $c{'Versum 1'} if $cwinner =~ /C10/ && $file =~ /C6/;    # GitHub #5293
 
     if ($c{Rank} =~ /;;(ex|vide)\s+(.*)\s*$/i) {
 
@@ -708,6 +710,7 @@ sub getcommemoratio {
         $c{"Ant $i"} ||= $c2{"Ant $i"};
         $c{"Versum $i"} ||= $c2{"Versum $i"};
       }
+      $c{'Versum 3'} = $c{'Versum 1'} if $cwinner =~ /C10/ && $file =~ /C6/;    # GitHub #5293
     }
   } else {
     %c = {};
@@ -843,7 +846,9 @@ sub vigilia_commemoratio {
   my %w = %{setupstring($lang, $fname)};
   my @wrank = split(';;', $w{Rank});
 
-  if ($w{Rank} =~ /Vigili/i) {
+  my $vigilString = &translate("Vigil", $lang);
+
+  if ($w{Rank} =~ /$vigilString/i) {
     $w = $w{Oratio};
 
     if (!$w && $w{Rank} =~ /(?:ex|vide) C1v/) {
@@ -856,7 +861,7 @@ sub vigilia_commemoratio {
   }
   if (!$w) { return ''; }
   my $c = "!" . &translate('Commemoratio', $lang) . ": " . &translate("Vigilia", $lang) . "\n";
-  if ($w{Rank} =~ /Vigili/i) { $c =~ s/\:.*/: $wrank[0]/; }
+  if ($w{Rank} =~ /$vigilString/i) { $c =~ s/\:.*/: $wrank[0]/; }
   if ($w =~ /(\!.*?\n)(.*)/s) { $c = $1; $w = $2; }
   my %p = %{setupstring($lang, 'Psalterium/Special/Major Special.txt')};
   my $a = $p{"Feria Ant 2"};       #$p{"Day$dayofweek Ant 2"};

@@ -423,20 +423,28 @@ sub absolutio_benedictio {
     @a = split("\n", $m{Benedictio});
     $abs = $a[0];
     $ben = $a[3];
-    setbuild2('Special benedictio');
+    setbuild2('Special benedictio B.M.V.');
   } else {
     my %ben = %{setupstring($lang, 'Psalterium/Benedictions.txt')};
     my $i = dayofweek2i();
     my %w = (columnsel($lang)) ? %winner : %winner2;
-    @a = split(/\n/, $ben{"Nocturn $i"});
     my @abs = split(/\n/, $ben{Absolutiones});
+
+    @a = split(/\n/, $ben{"Nocturn $i"});
+
     $abs = $abs[dayofweek2i() - 1];
     $ben = $a[3 - ($i == 3)];
+
+    # CIST: proper Benedictions on summer Ferias
+    if ($dayofweek != 0 && $version =~ /Cist/i) {
+      my @ben_feria = split("\n", $ben{Feria});
+      $ben = $ben_feria[$dayofweek - 1];
+    }
 
     # CIST: some days have their proper Benedictio
     if (exists($w{Benedictio}) && $version =~ /Cist/i) {
       $ben = $w{Benedictio};
-      setbuild2('Special Benedictio ex proprio');
+      setbuild2('Benedictio ex proprio');
     }
   }
 
@@ -588,6 +596,12 @@ sub lectioE {
   @e = grep { !/^!/ } @e;     # remove rubrics
   $e[0] =~ s/^(v. )?/v. /;    # add initial to text
 
+  if ($version =~ /Praedicatorum/) {    # cut on ¶ mark
+    $e[0] =~ s/\s*¶.*//s;
+  } else {                              # remove ¶ mark
+    $e[0] =~ s/\s*¶//s;
+  }
+
   # In the CIST version, before the Gospel reading, there is a Dominus vobiscum dialog
   if ($version =~ /Cist/i) {
     join("\n", Dominus_vobiscum($lang), "\n", "v. $begin", join(' ', @e));
@@ -610,9 +624,9 @@ sub regula_vel_evangelium {
   my %r = %{setupstring($lang, 'Regula/OrdoPraedicatorum.txt')};
 
   if (lectioE_required()) {
-    my %b = %{setupstring($lang, 'Psalterium/Benedictions.txt')};
-    my @b = split /\n/, $b{'Nocturn 3'};
-    push @output, $b[1], '$Amen';
+    my $b = prayer('Divinum auxilium', $lang);
+    my @b = split /\n/, $b;
+    push @output, $b[0], '$Amen';
     push @output, lectioE($lang);
   } else {
     push @output, $r{Benedictio}, '$Amen';
