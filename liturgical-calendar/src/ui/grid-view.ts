@@ -141,7 +141,7 @@ export function renderGrid(
       td.classList.add('is-sunday');
     }
 
-    // Day number + holy day indicator
+    // Day number
     const dayHeader = document.createElement('div');
     dayHeader.className = 'day-header';
 
@@ -169,10 +169,6 @@ export function renderGrid(
       icons.appendChild(fishIcon);
     }
 
-    if (icons.childElementCount > 0) {
-      dayHeader.appendChild(icons);
-    }
-
     td.appendChild(dayHeader);
 
     // Celebration badge
@@ -182,6 +178,11 @@ export function renderGrid(
       badge.textContent = calDay.celebration.name;
       badge.title = calDay.celebration.name; // full name on hover
       td.appendChild(badge);
+    }
+
+    if (icons.childElementCount > 0) {
+      td.classList.add('has-day-icons');
+      td.appendChild(icons);
     }
 
     currentRow!.appendChild(td);

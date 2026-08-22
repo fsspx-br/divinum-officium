@@ -176,6 +176,21 @@ describe('renderGrid', () => {
     expect(icon).not.toBeNull();
   });
 
+  it('places day icons in the calendar cell for bottom-right positioning', () => {
+    const days = [makeDay({
+      date: '2026-03-01',
+      holyDayOfObligation: true,
+      abstinence: true,
+    })];
+    renderGrid(container, days, 2026, 3, noopMonthChange);
+
+    const cell = container.querySelector('td:not(.empty)');
+    const icons = cell?.querySelector(':scope > .day-icons');
+    expect(cell?.classList.contains('has-day-icons')).toBe(true);
+    expect(icons).not.toBeNull();
+    expect(icons?.children).toHaveLength(2);
+  });
+
   it('does not show icons when flags are not set', () => {
     const days = [makeDay({ date: '2026-03-01' })];
     renderGrid(container, days, 2026, 3, noopMonthChange);

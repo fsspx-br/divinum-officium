@@ -283,12 +283,17 @@ main {
 }
 
 .calendar-table td {
+  position: relative;
   border: 1px solid var(--ui-border);
   vertical-align: top;
   height: 90px;
   padding: 0.3rem;
   width: calc(100% / 7);
   overflow: hidden;
+}
+
+.calendar-table td.has-day-icons {
+  padding-bottom: 1.2rem;
 }
 
 .calendar-table td.empty {
@@ -314,6 +319,9 @@ main {
 }
 
 .day-icons {
+  position: absolute;
+  right: 0.3rem;
+  bottom: 0.3rem;
   display: flex;
   gap: 0.15rem;
 }
@@ -575,6 +583,15 @@ footer p {
   .calendar-table td {
     height: 70px;
     padding: 0.2rem;
+  }
+
+  .calendar-table td.has-day-icons {
+    padding-bottom: 1rem;
+  }
+
+  .day-icons {
+    right: 0.2rem;
+    bottom: 0.2rem;
   }
 
   .celebration-badge {
