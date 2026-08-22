@@ -35,3 +35,41 @@ export function applyOverrides(
     };
   });
 }
+
+export interface EditorRow {
+  original: string;
+  custom: string;
+}
+
+/** Build the sorted, deduped editor row list for a locale. */
+export function buildEditorRows(
+  days: CalendarDay[],
+  overrides: Overrides,
+  locale: Locale,
+): EditorRow[] {
+  const names = new Set<string>();
+  for (const day of days) {
+    if (day.celebration.name) names.add(day.celebration.name);
+    for (const c of day.commemorations) names.add(c);
+  }
+  const map = overrides[locale] ?? {};
+  for (const key of Object.keys(map)) names.add(key);
+
+  return [...names]
+    .sort((a, b) => a.localeCompare(b))
+    .map((original) => ({ original, custom: map[original] ?? '' }));
+}
+
+/** Replace a locale's override map from editor edits, pruning empty values. */
+export function mergeLocaleOverrides(
+  overrides: Overrides,
+  locale: Locale,
+  edits: Record<string, string>,
+): Overrides {
+  const map: LocaleOverrides = {};
+  for (const [original, custom] of Object.entries(edits)) {
+    const trimmed = custom.trim();
+    if (trimmed) map[original] = trimmed;
+  }
+  return { ...overrides, [locale]: map };
+}
