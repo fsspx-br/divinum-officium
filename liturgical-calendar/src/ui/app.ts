@@ -13,6 +13,7 @@ import type { CalendarDay } from '@engine/types';
 import { renderGrid } from './grid-view';
 import { renderAgenda } from './agenda-view';
 import { t, getLocale, setLocale, LOCALES, type Locale } from './i18n/i18n';
+import { versionSlug, escapeHtml } from './app-utils';
 
 // ── Version registry ────────────────────────────────────────────────────────
 
@@ -21,13 +22,7 @@ interface VersionEntry {
   slug: string;
 }
 
-/**
- * Convert a version label to a URL/filesystem-safe slug.
- * Must match the logic used in generate-ics.ts.
- */
-function versionSlug(version: string): string {
-  return version.replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-}
+// versionSlug and escapeHtml are imported from ./app-utils
 
 const VERSIONS: VersionEntry[] = [
   { label: 'Rubrics 1960 - 1960',    slug: versionSlug('Rubrics 1960 - 1960') },
@@ -111,13 +106,7 @@ function showError(message: string): void {
   calendarAgenda.innerHTML = html;
 }
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
+// escapeHtml imported from ./app-utils
 
 /**
  * Re-render whichever view is currently active, using the current state.
@@ -243,26 +232,17 @@ function updateUIStrings(): void {
 // ── Subscribe Button ────────────────────────────────────────────────────────
 
 /**
- * Construct the ICS subscription URL for the current version and year,
- * then copy it to the clipboard (with a brief button label feedback).
+ * Open the ICS file for the current version and year.
+ * On mobile, this triggers the native calendar app to import the events.
+ * On desktop, it downloads the file for import into a calendar application.
  */
-async function handleSubscribe(): Promise<void> {
+function handleSubscribe(): void {
   const icsUrl = new URL(
     `./ics/${state.currentVersion.slug}/${state.currentYear}.ics`,
     window.location.href,
   ).href;
 
-  try {
-    await navigator.clipboard.writeText(icsUrl);
-    const original = btnSubscribe.textContent;
-    btnSubscribe.textContent = t('controls.copied');
-    setTimeout(() => {
-      btnSubscribe.textContent = original;
-    }, 2000);
-  } catch {
-    // Fallback: open the URL directly
-    window.open(icsUrl, '_blank');
-  }
+  window.location.href = icsUrl;
 }
 
 // ── Event Listeners ─────────────────────────────────────────────────────────

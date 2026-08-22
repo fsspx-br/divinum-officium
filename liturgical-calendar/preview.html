@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ICS Preview — How events appear on devices</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+      background: #1a1a2e;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    /* ── Controls bar ─────────────────────────────────────── */
+    .controls {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+      align-items: center;
+    }
+
+    .controls label {
+      font-size: 0.8rem;
+      color: #aaa;
+      font-weight: 500;
+    }
+
+    .controls select, .controls input {
+      font-family: inherit;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.6rem;
+      border-radius: 8px;
+      border: 1px solid #444;
+      background: #2a2a4a;
+      color: #fff;
+      outline: none;
+    }
+
+    .controls select:focus, .controls input:focus {
+      border-color: #6366f1;
+    }
+
+    /* ── Phone frame ──────────────────────────────────────── */
+    .phone {
+      width: 375px;
+      min-height: 700px;
+      background: #fff;
+      border-radius: 40px;
+      overflow: hidden;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.5), 0 0 0 2px #333;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Status bar */
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 24px 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #1a1a1a;
+      background: #f2f2f7;
+    }
+
+    .status-bar .time { font-size: 0.85rem; }
+    .status-bar .icons { display: flex; gap: 4px; font-size: 0.7rem; }
+
+    /* Calendar header */
+    .cal-header {
+      background: #f2f2f7;
+      padding: 8px 20px 14px;
+      border-bottom: 0.5px solid #c6c6c8;
+    }
+
+    .cal-header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #1a1a1a;
+    }
+
+    .cal-header .cal-subtitle {
+      font-size: 0.75rem;
+      color: #8e8e93;
+      margin-top: 2px;
+    }
+
+    /* Event list */
+    .event-list {
+      flex: 1;
+      overflow-y: auto;
+      background: #fff;
+    }
+
+    .month-section {
+      padding: 0;
+    }
+
+    .month-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #8e8e93;
+      padding: 16px 20px 6px;
+      background: #f2f2f7;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .event-row {
+      display: grid;
+      grid-template-columns: 50px 5px 1fr;
+      min-height: 60px;
+      border-bottom: 0.5px solid #e5e5ea;
+      align-items: stretch;
+    }
+
+    .event-row:last-child { border-bottom: none; }
+
+    /* Date column */
+    .event-date {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 4px;
+    }
+
+    .event-dow {
+      font-size: 0.6rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: #8e8e93;
+      line-height: 1;
+    }
+
+    .event-daynum {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #1a1a1a;
+      line-height: 1.1;
+    }
+
+    .event-row.is-sunday .event-daynum { color: #ff3b30; }
+    .event-row.is-sunday .event-dow { color: #ff3b30; }
+
+    /* Color bar */
+    .event-color-bar {
+      width: 5px;
+      align-self: stretch;
+      border-radius: 2px;
+      margin: 8px 0;
+    }
+
+    /* Details */
+    .event-details {
+      padding: 8px 16px 8px 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2px;
+      overflow: hidden;
+    }
+
+    .event-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #1a1a1a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .event-meta {
+      font-size: 0.7rem;
+      color: #8e8e93;
+    }
+
+    .event-icons {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .event-icons span {
+      font-size: 0.65rem;
+    }
+
+    .event-comm {
+      font-size: 0.65rem;
+      color: #aeaeb2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* All-day badge */
+    .all-day-tag {
+      display: inline-block;
+      font-size: 0.55rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: #8e8e93;
+      background: #f2f2f7;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    /* Bottom safe area */
+    .safe-area {
+      height: 34px;
+      background: #fff;
+    }
+
+    /* Color mapping */
+    .bar-white  { background: #c7c7cc; }
+    .bar-red    { background: #ff3b30; }
+    .bar-green  { background: #34c759; }
+    .bar-violet { background: #af52de; }
+    .bar-rose   { background: #ff6482; }
+    .bar-black  { background: #1c1c1e; }
+
+    /* Loading state */
+    .loading {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #8e8e93;
+      font-size: 0.9rem;
+    }
+
+    /* Info text below phone */
+    .info {
+      margin-top: 1.5rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: #888;
+      max-width: 375px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="controls">
+    <div>
+      <label for="locale-select">Locale:</label>
+      <select id="locale-select">
+        <option value="la">Latina</option>
+        <option value="en">English</option>
+        <option value="pt">Português</option>
+      </select>
+    </div>
+    <div>
+      <label for="version-select">Rubrics:</label>
+      <select id="version-select"></select>
+    </div>
+    <div>
+      <label for="year-input">Year:</label>
+      <input type="number" id="year-input" value="2026" min="1900" max="2100" style="width:5rem">
+    </div>
+  </div>
+
+  <div class="phone">
+    <div class="status-bar">
+      <span class="time">9:41</span>
+      <span class="icons">&#x1F4F6; &#x1F50B;</span>
+    </div>
+    <div class="cal-header">
+      <h1 id="cal-title">Calendar</h1>
+      <div class="cal-subtitle" id="cal-subtitle"></div>
+    </div>
+    <div class="event-list" id="event-list">
+      <div class="loading">Loading…</div>
+    </div>
+    <div class="safe-area"></div>
+  </div>
+
+  <div class="info">
+    This is how the .ics events appear in a native calendar app (iOS style).<br>
+    Each event is an all-day entry with the celebration name, rank, season, and liturgical color.
+  </div>
+
+  <script>
+    const VERSIONS = [
+      { label: 'Rubrics 1960 - 1960',   slug: 'Rubrics-1960-1960' },
+      { label: 'Divino Afflatu - 1954', slug: 'Divino-Afflatu-1954' },
+      { label: 'Divino Afflatu - 1939', slug: 'Divino-Afflatu-1939' },
+      { label: 'Tridentine - 1906',     slug: 'Tridentine-1906' },
+      { label: 'Tridentine - 1888',     slug: 'Tridentine-1888' },
+      { label: 'Tridentine - 1570',     slug: 'Tridentine-1570' },
+      { label: 'Reduced - 1955',        slug: 'Reduced-1955' },
+      { label: 'Monastic - 1963',       slug: 'Monastic-1963' },
+    ];
+
+    const MONTHS = [
+      'January','February','March','April','May','June',
+      'July','August','September','October','November','December'
+    ];
+
+    const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+    const COLOR_NAMES = {
+      white: 'White', red: 'Red', green: 'Green',
+      violet: 'Violet', rose: 'Rose', black: 'Black',
+    };
+
+    // Populate version selector
+    const versionSelect = document.getElementById('version-select');
+    for (const v of VERSIONS) {
+      const opt = document.createElement('option');
+      opt.value = v.slug;
+      opt.textContent = v.label;
+      versionSelect.appendChild(opt);
+    }
+
+    const localeSelect = document.getElementById('locale-select');
+    const yearInput = document.getElementById('year-input');
+
+    async function loadAndRender() {
+      const locale = localeSelect.value;
+      const slug = versionSelect.value;
+      const year = yearInput.value;
+      const label = VERSIONS.find(v => v.slug === slug)?.label ?? slug;
+
+      document.getElementById('cal-title').textContent = 'Divinum Officium';
+      document.getElementById('cal-subtitle').textContent = `${label} · ${year}`;
+
+      const list = document.getElementById('event-list');
+      list.innerHTML = '<div class="loading">Loading…</div>';
+
+      try {
+        const res = await fetch(`dist/data/${locale}/${slug}/${year}.json`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const days = await res.json();
+        renderEvents(days);
+      } catch (err) {
+        list.innerHTML = `<div class="loading">Error: ${err.message}<br>Run <code>npm run build</code> first.</div>`;
+      }
+    }
+
+    function capitalize(s) {
+      return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+    }
+
+    function renderEvents(days) {
+      const list = document.getElementById('event-list');
+      list.innerHTML = '';
+
+      let currentMonth = -1;
+
+      for (const day of days) {
+        const dateObj = new Date(day.date + 'T12:00:00');
+        const month = dateObj.getMonth();
+
+        // Month section header
+        if (month !== currentMonth) {
+          currentMonth = month;
+          const label = document.createElement('div');
+          label.className = 'month-label';
+          label.textContent = MONTHS[month];
+          list.appendChild(label);
+        }
+
+        const dow = dateObj.getDay();
+        const isSunday = dow === 0;
+
+        const row = document.createElement('div');
+        row.className = `event-row${isSunday ? ' is-sunday' : ''}`;
+
+        // Date
+        const dateCol = document.createElement('div');
+        dateCol.className = 'event-date';
+        dateCol.innerHTML =
+          `<span class="event-dow">${DAYS[dow]}</span>` +
+          `<span class="event-daynum">${dateObj.getDate()}</span>`;
+
+        // Color bar
+        const bar = document.createElement('div');
+        bar.className = `event-color-bar bar-${day.color}`;
+
+        // Details
+        const details = document.createElement('div');
+        details.className = 'event-details';
+
+        // Name row with icons
+        const nameRow = document.createElement('div');
+        nameRow.style.display = 'flex';
+        nameRow.style.alignItems = 'center';
+        nameRow.style.gap = '4px';
+        nameRow.style.overflow = 'hidden';
+
+        if (day.holyDayOfObligation) {
+          const icon = document.createElement('span');
+          icon.className = 'event-icons';
+          icon.innerHTML = '<span>⛪</span>';
+          nameRow.appendChild(icon);
+        }
+        if (day.abstinence) {
+          const icon = document.createElement('span');
+          icon.className = 'event-icons';
+          icon.innerHTML = '<span>🐟</span>';
+          nameRow.appendChild(icon);
+        }
+
+        const name = document.createElement('span');
+        name.className = 'event-name';
+        name.textContent = day.celebration.name;
+        name.title = day.celebration.name;
+        nameRow.appendChild(name);
+
+        const allDay = document.createElement('span');
+        allDay.className = 'all-day-tag';
+        allDay.textContent = 'all day';
+        nameRow.appendChild(allDay);
+
+        details.appendChild(nameRow);
+
+        // Meta
+        const meta = document.createElement('div');
+        meta.className = 'event-meta';
+        const season = capitalize(day.season.replace(/-/g, ' '));
+        const color = COLOR_NAMES[day.color] ?? day.color;
+        meta.textContent = `${day.celebration.rankName} · ${season} · ${color}`;
+        details.appendChild(meta);
+
+        // Commemorations
+        if (day.commemorations && day.commemorations.length > 0) {
+          const comm = document.createElement('div');
+          comm.className = 'event-comm';
+          comm.textContent = 'Also: ' + day.commemorations.join(', ');
+          details.appendChild(comm);
+        }
+
+        row.appendChild(dateCol);
+        row.appendChild(bar);
+        row.appendChild(details);
+        list.appendChild(row);
+      }
+    }
+
+    // Event listeners
+    localeSelect.addEventListener('change', loadAndRender);
+    versionSelect.addEventListener('change', loadAndRender);
+    yearInput.addEventListener('change', loadAndRender);
+    yearInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') loadAndRender();
+    });
+
+    // Initial load
+    loadAndRender();
+  </script>
+</body>
+</html>
