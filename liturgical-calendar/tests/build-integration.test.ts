@@ -12,7 +12,13 @@ import { fileURLToPath } from 'url';
 import { readFileSync } from 'fs';
 import { LiturgicalCalendar } from '../src/engine/calendar';
 import { generateICS } from '../src/ics/generator';
-import { markHolyDays, markAbstinence, applyPtTranslations } from '../src/build/pipeline';
+import {
+  markHolyDays,
+  markAbstinence,
+  markEmberDays,
+  applyPtTranslations,
+  applyPtDateTranslations,
+} from '../src/build/pipeline';
 import type { HolyDaysConfig } from '../src/build/pipeline';
 import type { CalendarDay } from '../src/engine/types';
 
@@ -49,6 +55,10 @@ const HOLY_DAYS_CONFIG: HolyDaysConfig = JSON.parse(
 
 const PT_TRANSLATIONS: Record<string, string> = JSON.parse(
   readFileSync(resolve(__dirname, '../src/build/pt-translations.json'), 'utf8'),
+);
+
+const PT_DATE_TRANSLATIONS: Record<string, string> = JSON.parse(
+  readFileSync(resolve(__dirname, '../src/build/pt-date-translations-2026.json'), 'utf8'),
 );
 
 const TEST_YEAR = 2026;
@@ -138,6 +148,14 @@ for (const locale of LOCALES) {
           }
         });
 
+        it('markEmberDays marks exactly twelve rubric-aware dates', () => {
+          if (!days) return;
+          const marked = markAbstinence(markEmberDays(days, version));
+          const emberDays = marked.filter((day) => day.isEmberDay);
+          expect(emberDays).toHaveLength(12);
+          expect(emberDays.every((day) => day.abstinence)).toBe(true);
+        });
+
         if (locale.code === 'pt') {
           it('applyPtTranslations translates known celebration names', () => {
             if (!days) return;
@@ -207,3 +225,62 @@ for (const locale of LOCALES) {
     }
   });
 }
+
+describe('Portuguese translation regressions', () => {
+  it('translates the ASCII ae spelling of St. Bartholomew used by the Portuguese office', () => {
+    const calendar = new LiturgicalCalendar(
+      DATA_DIR,
+      resolve(__dirname, '../../web/www/horas/Portugues'),
+      LATIN_OFFICE_DIR,
+    );
+    const day = calendar.getCalendarDay(
+      new Date(TEST_YEAR, 7, 24),
+      'Rubrics 1960 - 1960',
+    );
+
+    expect(day.celebration.name).toBe('S. Bartholomaei Apostoli');
+    const [translated] = applyPtTranslations([day], PT_TRANSLATIONS);
+    expect(translated.celebration.name).toBe('São Bartolomeu, Apóstolo');
+  });
+
+  it('leaves no Latin-only titles in the Rubrics 1960 Portuguese calendar for 2026', () => {
+    const latinCalendar = new LiturgicalCalendar(DATA_DIR, LATIN_OFFICE_DIR);
+    const portugueseCalendar = new LiturgicalCalendar(
+      DATA_DIR,
+      resolve(__dirname, '../../web/www/horas/Portugues'),
+      LATIN_OFFICE_DIR,
+    );
+    const version = 'Rubrics 1960 - 1960';
+    const latinDays = latinCalendar.getCalendarYear(TEST_YEAR, version);
+    const portugueseDays = applyPtDateTranslations(
+      applyPtTranslations(portugueseCalendar.getCalendarYear(TEST_YEAR, version), PT_TRANSLATIONS),
+      PT_DATE_TRANSLATIONS,
+    );
+    const normalize = (value: string): string => value
+      .normalize('NFKD')
+      .replace(/æ/giu, 'ae')
+      .replace(/\p{M}/gu, '')
+      .replace(/[^a-z0-9]/giu, '')
+      .toLowerCase();
+    const untranslated: string[] = [];
+
+    for (let index = 0; index < latinDays.length; index++) {
+      const latinDay = latinDays[index];
+      const portugueseDay = portugueseDays[index];
+      if (normalize(latinDay.celebration.name) === normalize(portugueseDay.celebration.name)) {
+        untranslated.push(`${latinDay.date}: ${latinDay.celebration.name}`);
+      }
+      for (let commemorationIndex = 0;
+        commemorationIndex < latinDay.commemorations.length;
+        commemorationIndex++) {
+        const latinName = latinDay.commemorations[commemorationIndex];
+        const portugueseName = portugueseDay.commemorations[commemorationIndex];
+        if (portugueseName && normalize(latinName) === normalize(portugueseName)) {
+          untranslated.push(`${latinDay.date} (commemoration): ${latinName}`);
+        }
+      }
+    }
+
+    expect(untranslated, untranslated.join('\n')).toEqual([]);
+  });
+});

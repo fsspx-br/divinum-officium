@@ -27,6 +27,7 @@ export interface CalendarDay {
   transferredFrom?: string;
   holyDayOfObligation?: boolean;
   abstinence?: boolean;
+  isEmberDay?: boolean;
 }
 
 export type CalendarVersion = string;

@@ -20,7 +20,13 @@ import { mkdirSync, writeFileSync, readFileSync } from 'fs';
 import { LiturgicalCalendar } from '../engine/calendar';
 import { generateICS } from '../ics/generator';
 import type { CalendarDay } from '../engine/types';
-import { markHolyDays, markAbstinence, applyPtTranslations } from './pipeline';
+import {
+  markHolyDays,
+  markAbstinence,
+  markEmberDays,
+  applyPtTranslations,
+  applyPtDateTranslations,
+} from './pipeline';
 import type { HolyDaysConfig } from './pipeline';
 
 // ---------------------------------------------------------------------------
@@ -58,6 +64,12 @@ const LOCALES: LocaleConfig[] = [
 const PT_TRANSLATIONS: Record<string, string> = JSON.parse(
   readFileSync(resolve(__dirname, 'pt-translations.json'), 'utf8'),
 );
+
+const PT_DATE_TRANSLATIONS: Record<string, string> = JSON.parse(
+  readFileSync(resolve(__dirname, 'pt-date-translations-2026.json'), 'utf8'),
+);
+
+const PT_DATE_REFERENCE_VERSION = 'Rubrics 1960 - 1960';
 
 const HOLY_DAYS_CONFIG: HolyDaysConfig = JSON.parse(
   readFileSync(resolve(DATA_DIR, 'holy-days.json'), 'utf8'),
@@ -135,12 +147,18 @@ async function main(): Promise<void> {
           // Mark holy days of obligation (universal + brazil)
           days = markHolyDays(days, HOLY_DAYS_CONFIG, ['brazil']);
 
-          // Mark abstinence days (Fridays + Ash Wednesday + Good Friday)
+          // Mark the twelve Ember Days (Têmporas) using rubric-aware date rules
+          days = markEmberDays(days, version);
+
+          // Mark abstinence days, including all Ember Days
           days = markAbstinence(days);
 
           // Apply Portuguese translation map
           if (locale.code === 'pt') {
             days = applyPtTranslations(days, PT_TRANSLATIONS);
+            if (version === PT_DATE_REFERENCE_VERSION) {
+              days = applyPtDateTranslations(days, PT_DATE_TRANSLATIONS);
+            }
           }
 
           // Write JSON

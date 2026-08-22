@@ -8,7 +8,11 @@ import { describe, it, expect } from 'vitest';
 import {
   markHolyDays,
   markAbstinence,
+  getEmberDays,
+  isEmberDay,
+  markEmberDays,
   applyPtTranslations,
+  applyPtDateTranslations,
 } from '../src/build/pipeline';
 import type { HolyDaysConfig } from '../src/build/pipeline';
 import type { CalendarDay } from '../src/engine/types';
@@ -224,10 +228,89 @@ describe('markAbstinence', () => {
     expect(result[0].abstinence).toBe(true);
   });
 
+  it('marks every Ember Day as abstinence, including Wednesday and Saturday', () => {
+    const days = [
+      makeDay({ date: '2026-02-25', isEmberDay: true }),
+      makeDay({ date: '2026-02-28', isEmberDay: true }),
+    ];
+    const result = markAbstinence(days);
+    expect(result.every((day) => day.abstinence)).toBe(true);
+  });
+
+  it('does not exempt an Ember Friday that is also marked as a holy day', () => {
+    const day = makeDay({
+      date: '2026-02-27',
+      isEmberDay: true,
+      holyDayOfObligation: true,
+    });
+    const [result] = markAbstinence([day]);
+    expect(result.abstinence).toBe(true);
+  });
+
   it('does not mutate original days', () => {
     const days = [makeDay({ date: '2026-03-06' })]; // Friday
     markAbstinence(days);
     expect(days[0].abstinence).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Ember Days (Têmporas)
+// ---------------------------------------------------------------------------
+
+describe('isEmberDay', () => {
+  const modernVersion = 'Rubrics 1960 - 1960';
+
+  it('calculates all twelve Ember Days for 2026', () => {
+    expect(getEmberDays(2026, modernVersion)).toEqual([
+      '2026-02-25',
+      '2026-02-27',
+      '2026-02-28',
+      '2026-05-27',
+      '2026-05-29',
+      '2026-05-30',
+      '2026-09-23',
+      '2026-09-25',
+      '2026-09-26',
+      '2026-12-16',
+      '2026-12-18',
+      '2026-12-19',
+    ]);
+  });
+
+  it('detects an Ember Day from only its ISO date', () => {
+    expect(isEmberDay('2026-09-23')).toBe(true);
+    expect(isEmberDay('2026-09-24')).toBe(false);
+  });
+
+  it('uses the pre-1960 September rule for older rubrics', () => {
+    const oldVersion = 'Divino Afflatu - 1954';
+    expect(isEmberDay('2026-09-16', oldVersion)).toBe(true);
+    expect(isEmberDay('2026-09-18', oldVersion)).toBe(true);
+    expect(isEmberDay('2026-09-19', oldVersion)).toBe(true);
+    expect(isEmberDay('2026-09-23', oldVersion)).toBe(false);
+  });
+
+  it('rejects malformed dates', () => {
+    expect(isEmberDay('not-a-date')).toBe(false);
+    expect(isEmberDay('2026-9-23')).toBe(false);
+  });
+});
+
+describe('markEmberDays', () => {
+  it('marks Ember Days and leaves ordinary days unchanged', () => {
+    const emberDay = makeDay({ date: '2026-02-25' });
+    const ordinaryDay = makeDay({ date: '2026-02-26' });
+    const result = markEmberDays([emberDay, ordinaryDay], 'Rubrics 1960 - 1960');
+
+    expect(result[0].isEmberDay).toBe(true);
+    expect(result[1]).toBe(ordinaryDay);
+  });
+
+  it('does not mutate the original day', () => {
+    const day = makeDay({ date: '2026-05-27' });
+    markEmberDays([day]);
+    expect(day.isEmberDay).toBeUndefined();
   });
 });
 
@@ -252,6 +335,27 @@ describe('applyPtTranslations', () => {
     const days = [makeDay({ celebration: { name: 'Unknown Feast', rank: 3, rankName: 'Duplex', source: 'sanctoral' } })];
     const result = applyPtTranslations(days, translations);
     expect(result[0].celebration.name).toBe('Unknown Feast');
+  });
+
+  it('matches ae spellings and punctuation against typographic Latin keys', () => {
+    const days = [makeDay({
+      celebration: { name: 'S. Andreae Apostoli.', rank: 3, rankName: 'Duplex', source: 'sanctoral' },
+    })];
+    const result = applyPtTranslations(days, { 'S. Andreæ Apostoli': 'S. André Apóstolo' });
+    expect(result[0].celebration.name).toBe('S. André Apóstolo');
+  });
+
+  it('uses the website-style Féria fallback for otherwise unmapped Latin ferias', () => {
+    const days = [makeDay({
+      celebration: {
+        name: 'Feria Tertia infra Hebdomadam XIX post Octavam Pentecostes',
+        rank: 1,
+        rankName: 'Feria',
+        source: 'temporal',
+      },
+    })];
+    const result = applyPtTranslations(days, {});
+    expect(result[0].celebration.name).toBe('Féria');
   });
 
   it('translates commemorations', () => {
@@ -285,5 +389,41 @@ describe('applyPtTranslations', () => {
     expect(result[0].color).toBe('violet');
     expect(result[0].celebration.rank).toBe(1);
     expect(result[0].celebration.rankName).toBe('Feria');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// applyPtDateTranslations
+// ---------------------------------------------------------------------------
+
+describe('applyPtDateTranslations', () => {
+  it('uses an exact-date website label after name-based translation', () => {
+    const days = [makeDay({
+      date: '2026-11-18',
+      celebration: {
+        name: 'In Dedicatione Basilicarum Ss. Apostolorum Petri et Pauli',
+        rank: 3,
+        rankName: 'Duplex',
+        source: 'sanctoral',
+      },
+    })];
+
+    const result = applyPtDateTranslations(days, {
+      '2026-11-18': 'Dedicação da Basílica de S. Pedro e S. Paulo',
+    });
+
+    expect(result[0].celebration.name).toBe('Dedicação da Basílica de S. Pedro e S. Paulo');
+  });
+
+  it('does not alter dates without an exact-date label', () => {
+    const day = makeDay();
+    const [result] = applyPtDateTranslations([day], {});
+    expect(result).toBe(day);
+  });
+
+  it('does not mutate the original day', () => {
+    const day = makeDay();
+    applyPtDateTranslations([day], { '2026-03-02': 'Féria' });
+    expect(day.celebration.name).toBe('Feria II');
   });
 });
