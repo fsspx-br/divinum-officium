@@ -16,6 +16,9 @@ node_modules/
 dist/
 *.tsbuildinfo
 
+# Local custom translations (dev-only, host-persisted)
+liturgical-calendar/data/custom-translations.json
+
 # Environment
 .env
 .env.*
