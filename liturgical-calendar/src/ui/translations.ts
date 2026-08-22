@@ -55,9 +55,7 @@ export function renderTranslationsEditor(
   const saveEl = container.querySelector<HTMLButtonElement>('#tr-save')!;
   const statusEl = container.querySelector<HTMLElement>('#tr-status')!;
 
-  let dirty = false;
   function markDirty(): void {
-    dirty = true;
     saveEl.disabled = false;
     statusEl.textContent = t('translations.unsaved');
   }
@@ -85,7 +83,6 @@ export function renderTranslationsEditor(
     try {
       await props.onSave(next);
       props.overrides = next;
-      dirty = false;
       statusEl.textContent = t('translations.saved');
     } catch (err) {
       saveEl.disabled = false;
@@ -93,6 +90,4 @@ export function renderTranslationsEditor(
       statusEl.textContent = detail;
     }
   });
-
-  void dirty; // dirty is tracked for UI state; referenced to satisfy noUnusedLocals
 }

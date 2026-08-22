@@ -50,7 +50,7 @@ export function buildEditorRows(
   const names = new Set<string>();
   for (const day of days) {
     if (day.celebration.name) names.add(day.celebration.name);
-    for (const c of day.commemorations) names.add(c);
+    for (const c of day.commemorations) if (c) names.add(c);
   }
   const map = overrides[locale] ?? {};
   for (const key of Object.keys(map)) names.add(key);

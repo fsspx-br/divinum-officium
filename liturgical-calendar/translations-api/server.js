@@ -59,8 +59,9 @@ const fileStore = {
 
 function startServer() {
   const server = createServer(async (req, res) => {
-    let bodyText = '';
-    for await (const chunk of req) bodyText += chunk;
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    const bodyText = Buffer.concat(chunks).toString('utf8');
     const { status, body } = await handleTranslationsRequest(
       req.method || 'GET',
       req.url || '',
