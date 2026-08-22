@@ -14,6 +14,9 @@ import { renderGrid } from './grid-view';
 import { renderAgenda } from './agenda-view';
 import { t, getLocale, setLocale, LOCALES, type Locale } from './i18n/i18n';
 import { versionSlug, escapeHtml } from './app-utils';
+import { applyOverrides, type Overrides } from './overrides';
+import { getOverrides, saveOverrides } from './translations-api';
+import { renderTranslationsEditor } from './translations';
 
 // ── Version registry ────────────────────────────────────────────────────────
 
@@ -41,9 +44,10 @@ interface AppState {
   currentYear: number;
   currentMonth: number;
   currentVersion: VersionEntry;
-  currentView: 'grid' | 'agenda';
+  currentView: 'grid' | 'agenda' | 'translations';
   currentLocale: Locale;
   yearDays: CalendarDay[];
+  overrides: Overrides;
 }
 
 const today = new Date();
@@ -55,6 +59,7 @@ const state: AppState = {
   currentView: 'grid',
   currentLocale: getLocale(),
   yearDays: [],
+  overrides: {},
 };
 
 // ── DOM References ──────────────────────────────────────────────────────────
@@ -67,6 +72,8 @@ const btnSubscribe   = document.getElementById('btn-subscribe')    as HTMLButton
 const langSelect     = document.getElementById('lang-select')      as HTMLSelectElement;
 const calendarGrid   = document.getElementById('calendar-grid')    as HTMLDivElement;
 const calendarAgenda = document.getElementById('calendar-agenda')  as HTMLDivElement;
+const btnTranslations   = document.getElementById('btn-translations')     as HTMLButtonElement;
+const calendarTranslations = document.getElementById('calendar-translations') as HTMLDivElement;
 
 // ── Data Loading ────────────────────────────────────────────────────────────
 
@@ -112,23 +119,27 @@ function showError(message: string): void {
  * Re-render whichever view is currently active, using the current state.
  */
 function renderCurrentView(): void {
+  if (state.currentView === 'translations') {
+    renderTranslationsEditor(calendarTranslations, {
+      days: state.yearDays,
+      overrides: state.overrides,
+      locale: state.currentLocale,
+      onSave: async (next) => {
+        await saveOverrides(next);
+        state.overrides = next;
+      },
+    });
+    return;
+  }
+
   if (state.yearDays.length === 0) return;
 
+  const days = applyOverrides(state.yearDays, state.overrides, state.currentLocale);
+
   if (state.currentView === 'grid') {
-    renderGrid(
-      calendarGrid,
-      state.yearDays,
-      state.currentYear,
-      state.currentMonth,
-      handleMonthChange,
-    );
+    renderGrid(calendarGrid, days, state.currentYear, state.currentMonth, handleMonthChange);
   } else {
-    renderAgenda(
-      calendarAgenda,
-      state.yearDays,
-      state.currentYear,
-      state.currentMonth,
-    );
+    renderAgenda(calendarAgenda, days, state.currentYear, state.currentMonth);
   }
 }
 
@@ -163,20 +174,16 @@ async function reloadAndRender(): Promise<void> {
 /**
  * Switch between Grid and Agenda views without reloading data.
  */
-function switchView(view: 'grid' | 'agenda'): void {
+function switchView(view: 'grid' | 'agenda' | 'translations'): void {
   state.currentView = view;
 
-  if (view === 'grid') {
-    calendarGrid.classList.remove('hidden');
-    calendarAgenda.classList.add('hidden');
-    btnGrid.classList.add('active');
-    btnAgenda.classList.remove('active');
-  } else {
-    calendarAgenda.classList.remove('hidden');
-    calendarGrid.classList.add('hidden');
-    btnAgenda.classList.add('active');
-    btnGrid.classList.remove('active');
-  }
+  calendarGrid.classList.toggle('hidden', view !== 'grid');
+  calendarAgenda.classList.toggle('hidden', view !== 'agenda');
+  calendarTranslations.classList.toggle('hidden', view !== 'translations');
+
+  btnGrid.classList.toggle('active', view === 'grid');
+  btnAgenda.classList.toggle('active', view === 'agenda');
+  btnTranslations.classList.toggle('active', view === 'translations');
 
   renderCurrentView();
 }
@@ -221,6 +228,7 @@ function updateUIStrings(): void {
   btnGrid.textContent = t('controls.grid');
   btnAgenda.textContent = t('controls.agenda');
   btnSubscribe.textContent = t('controls.subscribe');
+  btnTranslations.textContent = t('nav.translations');
 
   // Update data-i18n elements (footer legend)
   document.querySelectorAll('[data-i18n]').forEach((el) => {
@@ -272,6 +280,7 @@ yearInput.addEventListener('keydown', (e) => {
 
 btnGrid.addEventListener('click', () => switchView('grid'));
 btnAgenda.addEventListener('click', () => switchView('agenda'));
+btnTranslations.addEventListener('click', () => switchView('translations'));
 btnSubscribe.addEventListener('click', handleSubscribe);
 
 langSelect.addEventListener('change', () => {
@@ -292,6 +301,12 @@ async function init(): Promise<void> {
   yearInput.value = String(state.currentYear);
 
   updateUIStrings();
+
+  // Dev-only: enable the translations editor + load existing overrides.
+  if (import.meta.env.DEV) {
+    btnTranslations.classList.remove('hidden');
+    state.overrides = await getOverrides();
+  }
 
   // Initial data load and render
   await reloadAndRender();
