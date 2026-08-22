@@ -115,6 +115,22 @@ describe('resolveOccurrence', () => {
     expect(result.celebration.rank).toBe(5);
   });
 
+  it('resolves the 1960 September Ember Wednesday through the monthly temporal office', () => {
+    const result = resolveOccurrence(23, 9, 2026, VERSION_1960, dir, OFFICE_DIR);
+    expect(result.weekRef).toBe('Pent17');
+    expect(result.celebration.source).toBe('temporal');
+    expect(result.celebration.name).toBe('Feria Quarta Quattuor Temporum Septembris');
+    expect(result.celebration.rank).toBe(4.9);
+  });
+
+  it('uses the earlier September Ember week for pre-1960 rubrics', () => {
+    const result = resolveOccurrence(16, 9, 2026, VERSION_DA, dir, OFFICE_DIR);
+    expect([
+      result.celebration.name,
+      ...result.commemorations,
+    ]).toContain('Feria Quarta Quattuor Temporum Septembris');
+  });
+
   // St. Joseph 2026 (Mar 19) — sanctoral, Duplex I classis
   // Under 1960 rules: St. Joseph rank 6 vs Lenten feria rank 3.9
   it('resolves St. Joseph 2026 as sanctoral winner', () => {

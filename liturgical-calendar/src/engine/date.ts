@@ -3,7 +3,7 @@
  *
  * Exports:
  *   leapYear, dateToYdays, ydaysToDate, dayOfWeek,
- *   getEaster, getAdvent, getSday, nextday, getWeek, seasonFromWeekRef
+ *   getEaster, getAdvent, getSday, nextday, getWeek, monthDay, seasonFromWeekRef
  */
 
 import type { Season } from './types';
@@ -235,6 +235,76 @@ export function getWeek(
   } else {
     return `Epi${8 - wdist}`;
   }
+}
+
+/**
+ * Return the August–November liturgical-month reference (`mmn-d`).
+ *
+ * This is the TypeScript equivalent of Date.pm's monthday(). The original
+ * engine uses it to overlay monthly temporal offices on the post-Pentecost
+ * week, most importantly the September Ember Days (`093-3`, `093-5`,
+ * `093-6`).
+ */
+export function monthDay(
+  day: number,
+  month: number,
+  year: number,
+  modernStyle = false,
+  tomorrow = false,
+): string {
+  if (month < 7) return '';
+
+  let dayOfYear = dateToYdays(day, month, year);
+  if (tomorrow) dayOfYear++;
+
+  const leapOffset = leapYear(year) ? 1 : 0;
+  const firstSundays: number[] = [];
+  let liturgicalMonth = 0;
+
+  for (let candidateMonth = 8; candidateMonth <= 12; candidateMonth++) {
+    const firstOfMonth = MONTHSUP[candidateMonth - 1] + 1 + leapOffset;
+    const dow = dayOfWeek(1, candidateMonth, year);
+    let firstSunday = firstOfMonth - dow;
+    if (dow >= 4 || (dow !== 0 && modernStyle)) firstSunday += 7;
+    firstSundays.push(firstSunday);
+
+    if (dayOfYear >= firstSunday) {
+      liturgicalMonth = candidateMonth;
+    } else {
+      break;
+    }
+  }
+
+  if (!liturgicalMonth) return '';
+
+  let advent: number | undefined;
+  if (liturgicalMonth > 10) {
+    advent = getAdvent(year);
+    if (dayOfYear >= advent) return '';
+  }
+
+  let week = Math.floor(
+    (dayOfYear - firstSundays[liturgicalMonth - 8]) / 7,
+  );
+
+  if (
+    liturgicalMonth === 10
+    && modernStyle
+    && week >= 2
+    && ydaysToDate(firstSundays[2], year).day >= 4
+  ) {
+    week++;
+  }
+
+  if (liturgicalMonth === 11 && (week > 0 || modernStyle)) {
+    week = 4 - Math.floor(((advent ?? getAdvent(year)) - dayOfYear - 1) / 7);
+    if (modernStyle && week === 1) week = 0;
+  }
+
+  let dow = dayOfWeek(day, month, year);
+  if (tomorrow) dow = (dow + 1) % 7;
+
+  return `${String(liturgicalMonth).padStart(2, '0')}${week + 1}-${dow}`;
 }
 
 /**

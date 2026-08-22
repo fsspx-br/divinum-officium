@@ -9,6 +9,7 @@ import {
   getSday,
   nextday,
   getWeek,
+  monthDay,
   seasonFromWeekRef,
 } from '@engine/date';
 
@@ -199,6 +200,21 @@ describe('getWeek', () => {
   });
   it('getWeek during Easter starts with Pasc', () => {
     expect(getWeek(5, 4, 2026)).toMatch(/^Pasc/);
+  });
+});
+
+describe('monthDay', () => {
+  it('maps the 1960 September Ember Wednesday to 093-3', () => {
+    expect(monthDay(23, 9, 2026, true)).toBe('093-3');
+  });
+
+  it('uses the earlier liturgical third week under pre-1960 rules', () => {
+    expect(monthDay(16, 9, 2026, false)).toBe('093-3');
+    expect(monthDay(16, 9, 2026, true)).toBe('092-3');
+  });
+
+  it('returns no monthly reference once Advent begins', () => {
+    expect(monthDay(6, 12, 2026, true)).toBe('');
   });
 });
 

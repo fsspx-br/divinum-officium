@@ -9,7 +9,7 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import type { Celebration, ParsedRank } from './types';
-import { getWeek, getSday, dayOfWeek } from './date';
+import { getWeek, getSday, dayOfWeek, monthDay } from './date';
 import { parseRankField } from './parser';
 import type { Directorium } from './directorium';
 
@@ -259,6 +259,17 @@ export function resolveOccurrence(
   const transferTempora = dir.getFromDirektorium('tempora', version, sday);
   if (transferTempora && /tempora/i.test(transferTempora) && !dir.isTransferred(transferTempora, year, version)) {
     tfile = transferTempora;
+  }
+
+  // The original engine overlays August–November monthly temporal files on
+  // post-Pentecost offices. Most monthly files only provide Scripture, but
+  // September Ember Days have their own Rank and therefore become the office.
+  const monthlyRef = monthDay(day, month, year, /196/.test(version));
+  if (monthlyRef) {
+    const monthlyFile = `Tempora/${monthlyRef}`;
+    if (getRankFromFile(officeDir, monthlyFile, version, 0, fallbackOfficeDir)) {
+      tfile = monthlyFile;
+    }
   }
 
   // Check if temporal office has been transferred away
