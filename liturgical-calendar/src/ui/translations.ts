@@ -12,6 +12,7 @@ import { escapeHtml } from './app-utils';
 
 export interface TranslationsEditorProps {
   days: CalendarDay[];
+  latinDays: CalendarDay[];
   overrides: Overrides;
   locale: Locale;
   onSave: (next: Overrides) => Promise<void>;
@@ -21,16 +22,17 @@ export function renderTranslationsEditor(
   container: HTMLElement,
   props: TranslationsEditorProps,
 ): void {
-  const rows = buildEditorRows(props.days, props.overrides, props.locale);
+  const rows = buildEditorRows(props.days, props.latinDays, props.overrides, props.locale);
 
   const rowsHtml = rows
     .map((r) => {
       const orig = escapeHtml(r.original);
+      const key = escapeHtml(r.key);
       const val = escapeHtml(r.custom);
-      return `<div class="tr-row" data-original="${orig}">
+      return `<div class="tr-row" data-original="${orig}" data-key="${key}" data-translated="${val}">
         <span class="tr-orig">${orig}</span>
-        <input class="tr-input" type="text" data-original="${orig}" value="${val}"
-               placeholder="${escapeHtml(r.original)}">
+        <input class="tr-input" type="text" data-key="${key}" data-default="${key}"
+               value="${val}" placeholder="${key}">
       </div>`;
     })
     .join('');
@@ -67,15 +69,19 @@ export function renderTranslationsEditor(
   searchEl.addEventListener('input', () => {
     const q = searchEl.value.trim().toLowerCase();
     container.querySelectorAll<HTMLElement>('.tr-row').forEach((row) => {
-      const name = (row.getAttribute('data-original') || '').toLowerCase();
-      row.hidden = q.length > 0 && !name.includes(q);
+      const original = (row.getAttribute('data-original') || '').toLowerCase();
+      const translated = (row.getAttribute('data-translated') || '').toLowerCase();
+      row.hidden = q.length > 0 && !original.includes(q) && !translated.includes(q);
     });
   });
 
   saveEl.addEventListener('click', async () => {
     const edits: Record<string, string> = {};
     container.querySelectorAll<HTMLInputElement>('.tr-input').forEach((input) => {
-      edits[input.getAttribute('data-original') || ''] = input.value;
+      const key = input.getAttribute('data-key') || '';
+      const defaultValue = input.getAttribute('data-default') || '';
+      const value = input.value.trim();
+      if (value && value !== defaultValue) edits[key] = value;
     });
     const next = mergeLocaleOverrides(props.overrides, props.locale, edits);
 

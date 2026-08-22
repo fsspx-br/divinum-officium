@@ -58,24 +58,42 @@ describe('buildEditorRows', () => {
       makeDay({ celebration: { name: 'Beta', rank: 1, rankName: 'x', source: 'temporal' }, commemorations: ['Alpha'] }),
       makeDay({ celebration: { name: 'Beta', rank: 1, rankName: 'x', source: 'temporal' }, commemorations: ['Gamma'] }),
     ];
-    const rows = buildEditorRows(days, {}, 'en');
+    const rows = buildEditorRows(days, days, {}, 'en');
     expect(rows.map((r) => r.original)).toEqual(['Alpha', 'Beta', 'Gamma']);
   });
 
   it('unions existing override keys not present in the calendar', () => {
     const days = [makeDay({ celebration: { name: 'Beta', rank: 1, rankName: 'x', source: 'temporal' } })];
-    const rows = buildEditorRows(days, { en: { Zeta: 'Z!' } }, 'en');
+    const rows = buildEditorRows(days, days, { en: { Zeta: 'Z!' } }, 'en');
     expect(rows.map((r) => r.original)).toEqual(['Beta', 'Zeta']);
   });
 
   it('fills custom values from the override map for the locale', () => {
     const days = [makeDay({ celebration: { name: 'Beta', rank: 1, rankName: 'x', source: 'temporal' } })];
-    const rows = buildEditorRows(days, { en: { Beta: 'B!' } }, 'en');
+    const rows = buildEditorRows(days, days, { en: { Beta: 'B!' } }, 'en');
     expect(rows.find((r) => r.original === 'Beta')?.custom).toBe('B!');
   });
 
+  it('uses the built-in localized name when no custom override exists', () => {
+    const localized = [makeDay({ celebration: { name: 'Natal do Senhor', rank: 1, rankName: 'x', source: 'temporal' } })];
+    const latin = [makeDay({ celebration: { name: 'In Nativitate Domini', rank: 1, rankName: 'x', source: 'temporal' } })];
+    const rows = buildEditorRows(localized, latin, {}, 'pt');
+    expect(rows[0].custom).toBe('Natal do Senhor');
+  });
+
   it('returns [] for an empty calendar with no overrides', () => {
-    expect(buildEditorRows([], {}, 'en')).toEqual([]);
+    expect(buildEditorRows([], [], {}, 'en')).toEqual([]);
+  });
+
+  it('shows the matching Latin name while retaining the localized override key', () => {
+    const localized = [makeDay({ celebration: { name: 'Natal do Senhor', rank: 1, rankName: 'x', source: 'temporal' } })];
+    const latin = [makeDay({ celebration: { name: 'In Nativitate Domini', rank: 1, rankName: 'x', source: 'temporal' } })];
+    const rows = buildEditorRows(localized, latin, { pt: { 'Natal do Senhor': 'Natal' } }, 'pt');
+    expect(rows).toEqual([{
+      original: 'In Nativitate Domini',
+      key: 'Natal do Senhor',
+      custom: 'Natal',
+    }]);
   });
 });
 

@@ -47,6 +47,7 @@ interface AppState {
   currentView: 'grid' | 'agenda' | 'translations';
   currentLocale: Locale;
   yearDays: CalendarDay[];
+  latinDays: CalendarDay[];
   overrides: Overrides;
 }
 
@@ -59,6 +60,7 @@ const state: AppState = {
   currentView: 'grid',
   currentLocale: getLocale(),
   yearDays: [],
+  latinDays: [],
   overrides: {},
 };
 
@@ -81,9 +83,13 @@ const calendarTranslations = document.getElementById('calendar-translations') as
  * Fetch the pre-generated JSON for a given year + version slug.
  * Returns an empty array and shows an error message on failure.
  */
-async function loadCalendarData(year: number, version: VersionEntry): Promise<CalendarDay[]> {
+async function loadCalendarData(
+  year: number,
+  version: VersionEntry,
+  locale: Locale = state.currentLocale,
+): Promise<CalendarDay[]> {
   showLoading();
-  const url = `./data/${state.currentLocale}/${version.slug}/${year}.json`;
+  const url = `./data/${locale}/${version.slug}/${year}.json`;
   try {
     const res = await fetch(url);
     if (!res.ok) {
@@ -122,6 +128,7 @@ function renderCurrentView(): void {
   if (state.currentView === 'translations') {
     renderTranslationsEditor(calendarTranslations, {
       days: state.yearDays,
+      latinDays: state.latinDays,
       overrides: state.overrides,
       locale: state.currentLocale,
       onSave: async (next) => {
@@ -158,6 +165,9 @@ async function handleMonthChange(newYear: number, newMonth: number): Promise<voi
 
   if (yearChanged) {
     state.yearDays = await loadCalendarData(state.currentYear, state.currentVersion);
+    state.latinDays = state.currentLocale === 'la'
+      ? state.yearDays
+      : await loadCalendarData(state.currentYear, state.currentVersion, 'la');
   }
 
   renderCurrentView();
@@ -168,6 +178,9 @@ async function handleMonthChange(newYear: number, newMonth: number): Promise<voi
  */
 async function reloadAndRender(): Promise<void> {
   state.yearDays = await loadCalendarData(state.currentYear, state.currentVersion);
+  state.latinDays = state.currentLocale === 'la'
+    ? state.yearDays
+    : await loadCalendarData(state.currentYear, state.currentVersion, 'la');
   renderCurrentView();
 }
 

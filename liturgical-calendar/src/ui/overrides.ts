@@ -37,27 +37,43 @@ export function applyOverrides(
 }
 
 export interface EditorRow {
+  /** Latin name shown in the "Original name" column. */
   original: string;
+  /** Built-in locale translation and persisted override key. */
+  key: string;
+  /** Effective translated value shown in the editor. */
   custom: string;
 }
 
-/** Build the sorted, deduped editor row list for a locale. */
+/** Build the sorted, deduped editor row list, displaying Latin source names. */
 export function buildEditorRows(
   days: CalendarDay[],
+  latinDays: CalendarDay[],
   overrides: Overrides,
   locale: Locale,
 ): EditorRow[] {
-  const names = new Set<string>();
-  for (const day of days) {
-    if (day.celebration.name) names.add(day.celebration.name);
-    for (const c of day.commemorations) if (c) names.add(c);
+  const names = new Map<string, string>();
+  const latinByDate = new Map(latinDays.map((day) => [day.date, day]));
+
+  for (const [dayIndex, day] of days.entries()) {
+    const pairedDay = latinDays[dayIndex];
+    const latinDay = pairedDay?.date === day.date ? pairedDay : latinByDate.get(day.date);
+    if (day.celebration.name) {
+      names.set(day.celebration.name, latinDay?.celebration.name ?? day.celebration.name);
+    }
+    for (const [index, name] of day.commemorations.entries()) {
+      if (name) names.set(name, latinDay?.commemorations[index] ?? name);
+    }
   }
+
   const map = overrides[locale] ?? {};
-  for (const key of Object.keys(map)) names.add(key);
+  for (const key of Object.keys(map)) {
+    if (!names.has(key)) names.set(key, key);
+  }
 
   return [...names]
-    .sort((a, b) => a.localeCompare(b))
-    .map((original) => ({ original, custom: map[original] ?? '' }));
+    .map(([key, original]) => ({ original, key, custom: map[key] ?? key }))
+    .sort((a, b) => a.original.localeCompare(b.original));
 }
 
 /** Replace a locale's override map from editor edits, pruning empty values. */
