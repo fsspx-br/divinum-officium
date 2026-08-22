@@ -35,5 +35,15 @@
   "colors.violet": "Violaceus",
   "colors.rose": "Rosaceus",
   "colors.black": "Niger",
-  "agenda.also": "Etiam:"
+  "agenda.also": "Etiam:",
+  "nav.translations": "Translationes",
+  "translations.title": "Recensere translationes nominum dierum",
+  "translations.search": "Quaerere nomina…",
+  "translations.original": "Nomen originale",
+  "translations.custom": "Translatio propria",
+  "translations.save": "Servare",
+  "translations.saved": "Servatum",
+  "translations.unsaved": "Mutationes non servatae",
+  "translations.clear": "Delere",
+  "translations.unavailable": "Ministerium translationum propriarum non praesto est."
 }

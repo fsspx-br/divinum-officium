@@ -40,5 +40,15 @@
   "states.initError": "Failed to initialise the application. Please reload the page.",
   "agenda.also": "Also:",
   "holyDay.obligation": "Holy Day of Obligation",
-  "abstinence.day": "Day of Abstinence"
+  "abstinence.day": "Day of Abstinence",
+  "nav.translations": "Translations",
+  "translations.title": "Edit day-name translations",
+  "translations.search": "Search names…",
+  "translations.original": "Original name",
+  "translations.custom": "Custom translation",
+  "translations.save": "Save",
+  "translations.saved": "Saved",
+  "translations.unsaved": "Unsaved changes",
+  "translations.clear": "Clear",
+  "translations.unavailable": "Custom translations service unavailable."
 }

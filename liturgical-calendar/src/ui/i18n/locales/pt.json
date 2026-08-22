@@ -40,5 +40,15 @@
   "states.initError": "Falha ao inicializar a aplicação. Por favor, recarregue a página.",
   "agenda.also": "Também:",
   "holyDay.obligation": "Dia de Preceito",
-  "abstinence.day": "Dia de Abstinência"
+  "abstinence.day": "Dia de Abstinência",
+  "nav.translations": "Traduções",
+  "translations.title": "Editar traduções dos nomes dos dias",
+  "translations.search": "Buscar nomes…",
+  "translations.original": "Nome original",
+  "translations.custom": "Tradução personalizada",
+  "translations.save": "Salvar",
+  "translations.saved": "Salvo",
+  "translations.unsaved": "Alterações não salvas",
+  "translations.clear": "Limpar",
+  "translations.unavailable": "Serviço de traduções personalizadas indisponível."
 }
