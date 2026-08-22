@@ -1,0 +1,17 @@
+# Dev-only sidecar that persists custom liturgical day-name translations.
+# Run from liturgical-calendar/:  docker compose up -d
+# Then run the app with:          npm run dev   (Vite proxies /api -> :8090)
+
+services:
+  translations-api:
+    image: node:20-alpine
+    working_dir: /app
+    command: node server.js
+    environment:
+      - PORT=8090
+      - DATA_FILE=/data/custom-translations.json
+    volumes:
+      - ./translations-api:/app
+      - ./data:/data
+    ports:
+      - "8090:8090"

@@ -8,6 +8,11 @@ export default defineConfig({
     outDir: '../../dist',
     emptyOutDir: true,
   },
+  server: {
+    proxy: {
+      '/api': 'http://localhost:8090',
+    },
+  },
   resolve: {
     alias: {
       '@engine': resolve(__dirname, 'src/engine'),
