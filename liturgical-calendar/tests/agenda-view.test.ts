@@ -197,4 +197,13 @@ describe('renderAgenda', () => {
     const dayNum = container.querySelector('.agenda-day-num');
     expect(dayNum!.textContent).toBe('15');
   });
+
+  it('shows timed events in chronological context', () => {
+    renderAgenda(container, [makeDay()], 2026, 3, [{
+      uid: 'one', title: 'Missa', date: '2026-03-01', startTime: '18:30', endTime: '19:30',
+      timeZone: 'America/Sao_Paulo', location: '', description: '', sequence: 0,
+      createdAt: '', updatedAt: '', revision: '"one"',
+    }]);
+    expect(container.querySelector('.agenda-event')?.textContent).toContain('18:30–19:30  Missa');
+  });
 });

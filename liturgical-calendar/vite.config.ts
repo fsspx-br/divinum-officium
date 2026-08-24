@@ -10,7 +10,10 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': 'http://localhost:8090',
+      '/api/translations': 'http://localhost:8090',
+      '/api/events': 'http://localhost:8091',
+      '/api/admin': 'http://localhost:8091',
+      '/calendars': 'http://localhost:8091',
     },
   },
   resolve: {

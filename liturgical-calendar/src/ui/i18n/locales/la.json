@@ -45,5 +45,21 @@
   "translations.saved": "Servatum",
   "translations.unsaved": "Mutationes non servatae",
   "translations.clear": "Delere",
-  "translations.unavailable": "Ministerium translationum propriarum non praesto est."
+  "translations.unavailable": "Ministerium translationum propriarum non praesto est.",
+  "events.dayTitle": "Eventus diei {date}",
+  "events.none": "Nullus eventus horarius hoc die.",
+  "events.add": "Eventum addere",
+  "events.edit": "Recensere",
+  "events.delete": "Delere",
+  "events.deleteConfirm": "Hunc eventum delere?",
+  "events.close": "Claudere",
+  "events.title": "Titulus",
+  "events.date": "Dies",
+  "events.start": "Initium",
+  "events.end": "Finis",
+  "events.location": "Locus",
+  "events.description": "Descriptio",
+  "events.cancel": "Remittere",
+  "events.save": "Eventum servare",
+  "events.invalidTime": "Finis post initium esse debet."
 }

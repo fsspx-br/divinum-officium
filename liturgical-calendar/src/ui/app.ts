@@ -17,6 +17,12 @@ import { versionSlug, escapeHtml, isTranslationsEnabled } from './app-utils';
 import { applyOverrides, type Overrides } from './overrides';
 import { getOverrides, saveOverrides } from './translations-api';
 import { renderTranslationsEditor } from './translations';
+import {
+  getCanManageEvents,
+  getCustomEvents,
+  openDayEvents,
+  type CustomEvent,
+} from './custom-events';
 
 // ── Version registry ────────────────────────────────────────────────────────
 
@@ -49,6 +55,8 @@ interface AppState {
   yearDays: CalendarDay[];
   latinDays: CalendarDay[];
   overrides: Overrides;
+  customEvents: CustomEvent[];
+  canManageEvents: boolean;
 }
 
 const today = new Date();
@@ -62,6 +70,8 @@ const state: AppState = {
   yearDays: [],
   latinDays: [],
   overrides: {},
+  customEvents: [],
+  canManageEvents: false,
 };
 
 // ── DOM References ──────────────────────────────────────────────────────────
@@ -143,10 +153,31 @@ function renderCurrentView(): void {
 
   const days = applyOverrides(state.yearDays, state.overrides, state.currentLocale);
 
+  const handleDaySelect = (day: CalendarDay) => {
+    openDayEvents({
+      day,
+      events: state.customEvents.filter((event) => event.date === day.date),
+      canManage: state.canManageEvents,
+      onChanged: async () => {
+        await loadEventsForYear();
+        renderCurrentView();
+      },
+    });
+  };
+
   if (state.currentView === 'grid') {
-    renderGrid(calendarGrid, days, state.currentYear, state.currentMonth, handleMonthChange);
+    renderGrid(calendarGrid, days, state.currentYear, state.currentMonth, handleMonthChange, state.customEvents, handleDaySelect);
   } else {
-    renderAgenda(calendarAgenda, days, state.currentYear, state.currentMonth);
+    renderAgenda(calendarAgenda, days, state.currentYear, state.currentMonth, state.customEvents, handleDaySelect);
+  }
+}
+
+async function loadEventsForYear(): Promise<void> {
+  try {
+    state.customEvents = await getCustomEvents(`${state.currentYear}-01-01`, `${state.currentYear + 1}-01-01`);
+  } catch (error) {
+    console.error('Could not load custom events:', error);
+    state.customEvents = [];
   }
 }
 
@@ -168,6 +199,7 @@ async function handleMonthChange(newYear: number, newMonth: number): Promise<voi
     state.latinDays = state.currentLocale === 'la'
       ? state.yearDays
       : await loadCalendarData(state.currentYear, state.currentVersion, 'la');
+    await loadEventsForYear();
   }
 
   renderCurrentView();
@@ -181,6 +213,7 @@ async function reloadAndRender(): Promise<void> {
   state.latinDays = state.currentLocale === 'la'
     ? state.yearDays
     : await loadCalendarData(state.currentYear, state.currentVersion, 'la');
+  await loadEventsForYear();
   renderCurrentView();
 }
 
@@ -258,10 +291,7 @@ function updateUIStrings(): void {
  * On desktop, it downloads the file for import into a calendar application.
  */
 function handleSubscribe(): void {
-  const icsUrl = new URL(
-    `./ics/${state.currentVersion.slug}/${state.currentYear}.ics`,
-    window.location.href,
-  ).href;
+  const icsUrl = new URL('/calendars/rubrics-1960-pt.ics', window.location.href).href;
 
   window.location.href = icsUrl;
 }
@@ -314,6 +344,7 @@ async function init(): Promise<void> {
   yearInput.value = String(state.currentYear);
 
   updateUIStrings();
+  state.canManageEvents = await getCanManageEvents();
 
   // Enable the editor in development or in an explicitly opted-in production build.
   if (isTranslationsEnabled(import.meta.env)) {

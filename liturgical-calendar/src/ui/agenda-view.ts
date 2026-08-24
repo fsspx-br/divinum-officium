@@ -10,6 +10,7 @@
 
 import type { CalendarDay } from '@engine/types';
 import { t } from './i18n/i18n';
+import type { CustomEvent } from './custom-events';
 
 /**
  * Capitalise the first letter of a string.
@@ -39,6 +40,8 @@ export function renderAgenda(
   days: CalendarDay[],
   year: number,
   month: number,
+  customEvents: CustomEvent[] = [],
+  onDaySelect?: (day: CalendarDay) => void,
 ): void {
   container.innerHTML = '';
 
@@ -155,6 +158,21 @@ export function renderAgenda(
     details.appendChild(celebName);
     details.appendChild(meta);
 
+    const events = customEvents
+      .filter((event) => event.date === calDay.date)
+      .sort((a, b) => a.startTime.localeCompare(b.startTime));
+    if (events.length > 0) {
+      const eventList = document.createElement('div');
+      eventList.className = 'agenda-events';
+      for (const event of events) {
+        const eventItem = document.createElement('div');
+        eventItem.className = 'agenda-event';
+        eventItem.textContent = `${event.startTime}–${event.endTime}  ${event.title}`;
+        eventList.appendChild(eventItem);
+      }
+      details.appendChild(eventList);
+    }
+
     // Commemorations
     if (calDay.commemorations.length > 0) {
       const comms = document.createElement('div');
@@ -168,6 +186,18 @@ export function renderAgenda(
     row.appendChild(dateBlock);
     row.appendChild(colorBar);
     row.appendChild(details);
+
+    if (onDaySelect) {
+      row.classList.add('day-selectable');
+      row.tabIndex = 0;
+      row.addEventListener('click', () => onDaySelect(calDay));
+      row.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onDaySelect(calDay);
+        }
+      });
+    }
 
     list.appendChild(row);
   }

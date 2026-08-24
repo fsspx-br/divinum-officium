@@ -224,4 +224,16 @@ describe('renderGrid', () => {
     const dayNumbers = container.querySelectorAll('.day-number');
     expect(dayNumbers.length).toBe(31);
   });
+
+  it('renders timed events and opens the selected day', () => {
+    const onDaySelect = vi.fn();
+    renderGrid(container, [makeDay()], 2026, 3, noopMonthChange, [{
+      uid: 'one', title: 'Missa', date: '2026-03-01', startTime: '18:30', endTime: '19:30',
+      timeZone: 'America/Sao_Paulo', location: '', description: '', sequence: 0,
+      createdAt: '', updatedAt: '', revision: '"one"',
+    }], onDaySelect);
+    expect(container.querySelector('.day-event')?.textContent).toBe('18:30 Missa');
+    (container.querySelector('[data-date="2026-03-01"]') as HTMLElement).click();
+    expect(onDaySelect).toHaveBeenCalledWith(expect.objectContaining({ date: '2026-03-01' }));
+  });
 });

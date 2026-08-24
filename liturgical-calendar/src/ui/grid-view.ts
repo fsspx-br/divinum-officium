@@ -7,6 +7,7 @@
 
 import type { CalendarDay } from '@engine/types';
 import { t } from './i18n/i18n';
+import type { CustomEvent } from './custom-events';
 
 /**
  * Build a lookup map: ISO date string → CalendarDay
@@ -41,6 +42,8 @@ export function renderGrid(
   year: number,
   month: number,
   onMonthChange: (year: number, month: number) => void,
+  customEvents: CustomEvent[] = [],
+  onDaySelect?: (day: CalendarDay) => void,
 ): void {
   container.innerHTML = '';
 
@@ -134,6 +137,7 @@ export function renderGrid(
     const calDay = dayMap.get(isoDate);
 
     const td = document.createElement('td');
+    td.setAttribute('data-date', isoDate);
 
     // Determine day-of-week for this cell
     const thisDow = (startDow + dayOfMonth - 1) % 7;
@@ -178,6 +182,38 @@ export function renderGrid(
       badge.textContent = calDay.celebration.name;
       badge.title = calDay.celebration.name; // full name on hover
       td.appendChild(badge);
+
+      const events = customEvents.filter((event) => event.date === isoDate);
+      if (events.length > 0) {
+        const eventList = document.createElement('div');
+        eventList.className = 'day-event-list';
+        for (const event of events.slice(0, 2)) {
+          const eventItem = document.createElement('span');
+          eventItem.className = 'day-event';
+          eventItem.textContent = `${event.startTime} ${event.title}`;
+          eventItem.title = `${event.startTime}–${event.endTime} ${event.title}`;
+          eventList.appendChild(eventItem);
+        }
+        if (events.length > 2) {
+          const more = document.createElement('span');
+          more.className = 'day-event-more';
+          more.textContent = `+${events.length - 2}`;
+          eventList.appendChild(more);
+        }
+        td.appendChild(eventList);
+      }
+
+      if (onDaySelect) {
+        td.classList.add('day-selectable');
+        td.tabIndex = 0;
+        td.addEventListener('click', () => onDaySelect(calDay));
+        td.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onDaySelect(calDay);
+          }
+        });
+      }
     }
 
     if (icons.childElementCount > 0) {

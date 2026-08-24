@@ -50,5 +50,21 @@
   "translations.saved": "Saved",
   "translations.unsaved": "Unsaved changes",
   "translations.clear": "Clear",
-  "translations.unavailable": "Custom translations service unavailable."
+  "translations.unavailable": "Custom translations service unavailable.",
+  "events.dayTitle": "Events for {date}",
+  "events.none": "No timed events for this day.",
+  "events.add": "Add event",
+  "events.edit": "Edit",
+  "events.delete": "Delete",
+  "events.deleteConfirm": "Delete this event?",
+  "events.close": "Close",
+  "events.title": "Title",
+  "events.date": "Date",
+  "events.start": "Start",
+  "events.end": "End",
+  "events.location": "Location",
+  "events.description": "Description",
+  "events.cancel": "Cancel",
+  "events.save": "Save event",
+  "events.invalidTime": "End time must be later than start time."
 }

@@ -2,7 +2,7 @@
  * generate-ics.ts — CLI build script for ICS and JSON output files
  *
  * Generates liturgical calendar data for a set of pre-defined versions,
- * for the current year and the next year. JSON is generated per locale
+ * from the previous year through two years ahead. JSON is generated per locale
  * (one LiturgicalCalendar instance per language directory). ICS is only
  * generated for Latin to avoid duplication.
  *
@@ -105,7 +105,7 @@ function versionSlug(version: string): string {
 
 async function main(): Promise<void> {
   const currentYear = new Date().getFullYear();
-  const years = [currentYear, currentYear + 1];
+  const years = [currentYear - 1, currentYear, currentYear + 1, currentYear + 2];
 
   let totalFiles = 0;
 

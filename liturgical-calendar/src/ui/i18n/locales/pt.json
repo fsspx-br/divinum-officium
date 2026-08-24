@@ -50,5 +50,21 @@
   "translations.saved": "Salvo",
   "translations.unsaved": "Alterações não salvas",
   "translations.clear": "Limpar",
-  "translations.unavailable": "Serviço de traduções personalizadas indisponível."
+  "translations.unavailable": "Serviço de traduções personalizadas indisponível.",
+  "events.dayTitle": "Eventos de {date}",
+  "events.none": "Nenhum evento com horário neste dia.",
+  "events.add": "Adicionar evento",
+  "events.edit": "Editar",
+  "events.delete": "Excluir",
+  "events.deleteConfirm": "Excluir este evento?",
+  "events.close": "Fechar",
+  "events.title": "Título",
+  "events.date": "Data",
+  "events.start": "Início",
+  "events.end": "Fim",
+  "events.location": "Local",
+  "events.description": "Descrição",
+  "events.cancel": "Cancelar",
+  "events.save": "Salvar evento",
+  "events.invalidTime": "O horário final deve ser posterior ao inicial."
 }
