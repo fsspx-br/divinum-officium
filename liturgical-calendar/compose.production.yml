@@ -6,6 +6,8 @@ services:
     depends_on:
       translations-api:
         condition: service_healthy
+      events-api:
+        condition: service_healthy
     environment:
       NGINX_ENVSUBST_FILTER: TRANSLATIONS_ALLOWED_IP
       TRANSLATIONS_ALLOWED_IP: ${TRANSLATIONS_ALLOWED_IP:?set TRANSLATIONS_ALLOWED_IP in .env}
@@ -30,5 +32,36 @@ services:
     volumes:
       - translations-data:/data
 
+  events-api:
+    build:
+      context: ./events-api
+    image: liturgical-calendar-events-api:${CALENDAR_VERSION:-local}
+    container_name: liturgical-calendar-events-api
+    restart: unless-stopped
+    depends_on:
+      radicale:
+        condition: service_healthy
+    environment:
+      PORT: 8091
+      RADICALE_URL: http://radicale:5232
+      RADICALE_USER: ${RADICALE_USER:-calendar-api}
+      RADICALE_PASSWORD: ${RADICALE_PASSWORD:?set RADICALE_PASSWORD in .env}
+      LITURGICAL_DIST: /calendar-dist
+    volumes:
+      - ./dist:/calendar-dist:ro
+
+  radicale:
+    build:
+      context: ./radicale
+    image: liturgical-calendar-radicale:${CALENDAR_VERSION:-local}
+    container_name: liturgical-calendar-radicale
+    restart: unless-stopped
+    environment:
+      RADICALE_USER: ${RADICALE_USER:-calendar-api}
+      RADICALE_PASSWORD: ${RADICALE_PASSWORD:?set RADICALE_PASSWORD in .env}
+    volumes:
+      - radicale-data:/var/lib/radicale/collections
+
 volumes:
   translations-data:
+  radicale-data:

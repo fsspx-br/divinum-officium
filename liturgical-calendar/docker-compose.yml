@@ -15,3 +15,27 @@ services:
       - ./data:/data
     ports:
       - "8090:8090"
+
+  events-api:
+    build: ./events-api
+    environment:
+      - PORT=8091
+      - RADICALE_URL=http://radicale:5232
+      - RADICALE_USER=calendar-api
+      - RADICALE_PASSWORD=development-only
+      - LITURGICAL_DIST=/calendar-dist
+    volumes:
+      - ./dist:/calendar-dist:ro
+    ports:
+      - "8091:8091"
+    depends_on:
+      radicale:
+        condition: service_healthy
+
+  radicale:
+    build: ./radicale
+    environment:
+      - RADICALE_USER=calendar-api
+      - RADICALE_PASSWORD=development-only
+    volumes:
+      - ./data/radicale:/var/lib/radicale/collections
