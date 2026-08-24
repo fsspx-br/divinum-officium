@@ -22,3 +22,13 @@ export function escapeHtml(s: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
+
+interface TranslationFeatureEnv {
+  DEV?: boolean;
+  VITE_ENABLE_TRANSLATIONS?: string;
+}
+
+/** Enable the translation editor in development or an explicit production build. */
+export function isTranslationsEnabled(env: TranslationFeatureEnv): boolean {
+  return env.DEV === true || env.VITE_ENABLE_TRANSLATIONS === 'true';
+}

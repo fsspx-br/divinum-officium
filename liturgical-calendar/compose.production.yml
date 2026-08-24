@@ -1,0 +1,34 @@
+services:
+  calendar:
+    image: nginx:1.31.4-alpine
+    container_name: liturgical-calendar
+    restart: unless-stopped
+    depends_on:
+      translations-api:
+        condition: service_healthy
+    environment:
+      NGINX_ENVSUBST_FILTER: TRANSLATIONS_ALLOWED_IP
+      TRANSLATIONS_ALLOWED_IP: ${TRANSLATIONS_ALLOWED_IP:?set TRANSLATIONS_ALLOWED_IP in .env}
+    ports:
+      - "80:80"
+    volumes:
+      - ./dist:/usr/share/nginx/html/divinum-officium:ro
+      - ./deploy/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/divinum-officium/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  translations-api:
+    build:
+      context: ./translations-api
+    image: liturgical-calendar-translations-api:${CALENDAR_VERSION:-local}
+    container_name: liturgical-calendar-translations-api
+    restart: unless-stopped
+    volumes:
+      - translations-data:/data
+
+volumes:
+  translations-data:

@@ -7,14 +7,14 @@ import type { Overrides } from './overrides';
 
 const API_URL = '/api/translations';
 
-/** Fetch all overrides. Fails soft to {} if the sidecar is unavailable. */
-export async function getOverrides(): Promise<Overrides> {
+/** Fetch all overrides. Returns null when the API is unavailable or forbidden. */
+export async function getOverrides(): Promise<Overrides | null> {
   try {
     const res = await fetch(API_URL);
-    if (!res.ok) return {};
+    if (!res.ok) return null;
     return (await res.json()) as Overrides;
   } catch {
-    return {};
+    return null;
   }
 }
 

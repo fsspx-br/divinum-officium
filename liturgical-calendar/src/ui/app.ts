@@ -13,7 +13,7 @@ import type { CalendarDay } from '@engine/types';
 import { renderGrid } from './grid-view';
 import { renderAgenda } from './agenda-view';
 import { t, getLocale, setLocale, LOCALES, type Locale } from './i18n/i18n';
-import { versionSlug, escapeHtml } from './app-utils';
+import { versionSlug, escapeHtml, isTranslationsEnabled } from './app-utils';
 import { applyOverrides, type Overrides } from './overrides';
 import { getOverrides, saveOverrides } from './translations-api';
 import { renderTranslationsEditor } from './translations';
@@ -315,10 +315,13 @@ async function init(): Promise<void> {
 
   updateUIStrings();
 
-  // Dev-only: enable the translations editor + load existing overrides.
-  if (import.meta.env.DEV) {
-    btnTranslations.classList.remove('hidden');
-    state.overrides = await getOverrides();
+  // Enable the editor in development or in an explicitly opted-in production build.
+  if (isTranslationsEnabled(import.meta.env)) {
+    const overrides = await getOverrides();
+    if (overrides !== null) {
+      state.overrides = overrides;
+      btnTranslations.classList.remove('hidden');
+    }
   }
 
   // Initial data load and render

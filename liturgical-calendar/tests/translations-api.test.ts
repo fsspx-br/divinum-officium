@@ -14,14 +14,14 @@ describe('getOverrides', () => {
     expect(await getOverrides()).toEqual({ en: { A: 'a' } });
   });
 
-  it('returns {} when the response is not ok', async () => {
+  it('returns null when the response is not ok', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, status: 500, json: async () => ({}) })));
-    expect(await getOverrides()).toEqual({});
+    expect(await getOverrides()).toBeNull();
   });
 
-  it('returns {} when fetch throws (sidecar down)', async () => {
+  it('returns null when fetch throws (sidecar down)', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('ECONNREFUSED'); }));
-    expect(await getOverrides()).toEqual({});
+    expect(await getOverrides()).toBeNull();
   });
 });
 

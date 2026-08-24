@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { versionSlug, escapeHtml } from '../src/ui/app-utils';
+import { versionSlug, escapeHtml, isTranslationsEnabled } from '../src/ui/app-utils';
 
 describe('versionSlug', () => {
   it('converts version label to URL-safe slug', () => {
@@ -77,5 +77,20 @@ describe('escapeHtml', () => {
 
   it('handles empty string', () => {
     expect(escapeHtml('')).toBe('');
+  });
+});
+
+describe('isTranslationsEnabled', () => {
+  it('enables translations during development', () => {
+    expect(isTranslationsEnabled({ DEV: true })).toBe(true);
+  });
+
+  it('enables translations for an opted-in production build', () => {
+    expect(isTranslationsEnabled({ DEV: false, VITE_ENABLE_TRANSLATIONS: 'true' })).toBe(true);
+  });
+
+  it('keeps translations hidden in production by default', () => {
+    expect(isTranslationsEnabled({ DEV: false })).toBe(false);
+    expect(isTranslationsEnabled({ DEV: false, VITE_ENABLE_TRANSLATIONS: 'false' })).toBe(false);
   });
 });
