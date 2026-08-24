@@ -1,0 +1,51 @@
+FROM node:22-alpine AS assets
+
+WORKDIR /src/liturgical-calendar
+
+COPY liturgical-calendar/package.json liturgical-calendar/package-lock.json ./
+RUN npm ci
+
+COPY liturgical-calendar ./
+COPY web/www/horas/Latin /src/web/www/horas/Latin
+COPY web/www/horas/English /src/web/www/horas/English
+COPY web/www/horas/Portugues /src/web/www/horas/Portugues
+
+ARG VITE_ENABLE_TRANSLATIONS=true
+ENV VITE_ENABLE_TRANSLATIONS=${VITE_ENABLE_TRANSLATIONS}
+RUN npm run build
+
+FROM nginx:1.31.4-alpine AS calendar
+
+ENV NGINX_ENVSUBST_FILTER=TRANSLATIONS_ALLOWED_IP
+
+COPY --from=assets /src/liturgical-calendar/dist /usr/share/nginx/html/divinum-officium
+COPY liturgical-calendar/deploy/nginx.conf.template /etc/nginx/templates/default.conf.template
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD wget -q --spider http://127.0.0.1/divinum-officium/
+
+FROM node:22-alpine AS events-api
+
+WORKDIR /app
+
+COPY --chown=node:node liturgical-calendar/events-api/package.json \
+  liturgical-calendar/events-api/event.js \
+  liturgical-calendar/events-api/caldav.js \
+  liturgical-calendar/events-api/feed.js \
+  liturgical-calendar/events-api/server.js ./
+COPY --from=assets --chown=node:node /src/liturgical-calendar/dist /calendar-dist
+
+ENV NODE_ENV=production \
+    PORT=8091 \
+    RADICALE_URL=http://radicale:5232 \
+    RADICALE_USER=calendar-api \
+    LITURGICAL_DIST=/calendar-dist
+
+USER node
+
+EXPOSE 8091
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:8091/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+
+CMD ["node", "server.js"]

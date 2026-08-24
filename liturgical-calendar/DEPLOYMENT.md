@@ -5,18 +5,21 @@ editor, a private Radicale CalDAV server, the timed-event API, and the combined
 public subscription feed. Radicale is only reachable on the internal Docker
 network.
 
-## Build
+## Deploy on a new VPS
 
-From `liturgical-calendar/`:
+Only Git, Docker Engine, and the Docker Compose plugin are required. Node and
+Radicale do not need to be installed on the host.
 
 ```sh
-npm ci
-VITE_ENABLE_TRANSLATIONS=true npm run build
+git clone git@github.com:fsspx-br/divinum-officium.git
+cd divinum-officium/liturgical-calendar
+cp .env.example .env
 ```
 
 ## Configure
 
-Create an ignored `.env` file beside `compose.production.yml`:
+Edit `.env` and set the administrator's current public IP and a long random
+CalDAV password:
 
 ```dotenv
 TRANSLATIONS_ALLOWED_IP=203.0.113.10
@@ -37,6 +40,10 @@ and proper authentication before allowing access from arbitrary networks.
 docker compose -f compose.production.yml up -d --build
 docker compose -f compose.production.yml ps
 ```
+
+The multi-stage Docker build compiles the website, generates all calendar JSON
+and ICS assets, packages Nginx, and packages the event API. Moving to another
+VPS therefore requires no prebuilt files from a developer workstation.
 
 The calendar is served from `/divinum-officium/`. Translation overrides are
 stored in the `translations-data` Docker volume and survive container rebuilds.

@@ -1,6 +1,14 @@
+name: liturgical-calendar
+
 services:
   calendar:
-    image: nginx:1.31.4-alpine
+    build:
+      context: ..
+      dockerfile: liturgical-calendar/Dockerfile.production
+      target: calendar
+      args:
+        VITE_ENABLE_TRANSLATIONS: "true"
+    image: liturgical-calendar-web:${CALENDAR_VERSION:-local}
     container_name: liturgical-calendar
     restart: unless-stopped
     depends_on:
@@ -9,19 +17,9 @@ services:
       events-api:
         condition: service_healthy
     environment:
-      NGINX_ENVSUBST_FILTER: TRANSLATIONS_ALLOWED_IP
       TRANSLATIONS_ALLOWED_IP: ${TRANSLATIONS_ALLOWED_IP:?set TRANSLATIONS_ALLOWED_IP in .env}
     ports:
       - "80:80"
-    volumes:
-      - ./dist:/usr/share/nginx/html/divinum-officium:ro
-      - ./deploy/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/divinum-officium/"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 5s
 
   translations-api:
     build:
@@ -34,7 +32,9 @@ services:
 
   events-api:
     build:
-      context: ./events-api
+      context: ..
+      dockerfile: liturgical-calendar/Dockerfile.production
+      target: events-api
     image: liturgical-calendar-events-api:${CALENDAR_VERSION:-local}
     container_name: liturgical-calendar-events-api
     restart: unless-stopped
@@ -47,8 +47,6 @@ services:
       RADICALE_USER: ${RADICALE_USER:-calendar-api}
       RADICALE_PASSWORD: ${RADICALE_PASSWORD:?set RADICALE_PASSWORD in .env}
       LITURGICAL_DIST: /calendar-dist
-    volumes:
-      - ./dist:/calendar-dist:ro
 
   radicale:
     build:

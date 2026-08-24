@@ -1,0 +1,24 @@
+.git
+.github
+.superpowers
+**/node_modules
+liturgical-calendar/dist
+liturgical-calendar/data/radicale
+liturgical-calendar/.env
+liturgical-calendar/.deploy-*
+calendario - junho.pdf
+admin
+docker
+docs
+lexicon-tools
+obsolete
+regress
+standalone
+t
+web/www/horas/Deutsch
+web/www/horas/Espanol
+web/www/horas/Francais
+web/www/horas/Italiano
+web/www/horas/Magyar
+web/www/horas/Polski
+web/www/horas/Portugues/*.bak
