@@ -50,9 +50,16 @@ export class CalDavStore {
       headers: { 'Content-Type': 'application/xml; charset=utf-8' },
       body,
     });
-    if (![201, 204, 405].includes(response.status)) {
-      throw new Error(`Could not initialize CalDAV collection (HTTP ${response.status})`);
+    if ([201, 204].includes(response.status)) return;
+    if ([405, 409].includes(response.status)) {
+      const probe = await this.request('', {
+        method: 'PROPFIND',
+        headers: { Depth: '0', 'Content-Type': 'application/xml; charset=utf-8' },
+        body: '<?xml version="1.0"?><D:propfind xmlns:D="DAV:"><D:prop><D:resourcetype/></D:prop></D:propfind>',
+      });
+      if (probe.status === 207) return;
     }
+    throw new Error(`Could not initialize CalDAV collection (HTTP ${response.status})`);
   }
 
   async list(from, to) {
