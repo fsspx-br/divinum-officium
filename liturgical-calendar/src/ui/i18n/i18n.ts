@@ -24,7 +24,7 @@ const dictionaries: Record<Locale, Dict> = { en, pt, la };
 
 const STORAGE_KEY = 'locale';
 
-let currentLocale: Locale = 'en';
+let currentLocale: Locale = 'pt';
 
 function init(): void {
   const stored = localStorage.getItem(STORAGE_KEY);

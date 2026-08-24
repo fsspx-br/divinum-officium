@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 describe('i18n', () => {
   beforeEach(() => {
@@ -7,12 +7,12 @@ describe('i18n', () => {
     // Re-import the module fresh for each test by resetting via setLocale
   });
 
-  it('defaults to English', async () => {
-    const { getLocale } = await import('../src/ui/i18n/i18n.js');
-    // Reset to default state
-    const { setLocale } = await import('../src/ui/i18n/i18n.js');
-    setLocale('en');
-    expect(getLocale()).toBe('en');
+  it('defaults to Portuguese', async () => {
+    vi.resetModules();
+    localStorage.clear();
+    const { getLocale, t } = await import('../src/ui/i18n/i18n.js');
+    expect(getLocale()).toBe('pt');
+    expect(t('app.title')).toBe('Calendário Litúrgico');
   });
 
   it('returns English string for known key', async () => {
