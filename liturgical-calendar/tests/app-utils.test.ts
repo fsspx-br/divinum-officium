@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { versionSlug, escapeHtml, isTranslationsEnabled } from '../src/ui/app-utils';
+import {
+  versionSlug,
+  escapeHtml,
+  isTranslationsEnabled,
+  calendarSubscriptionUrl,
+} from '../src/ui/app-utils';
 
 describe('versionSlug', () => {
   it('converts version label to URL-safe slug', () => {
@@ -92,5 +97,17 @@ describe('isTranslationsEnabled', () => {
   it('keeps translations hidden in production by default', () => {
     expect(isTranslationsEnabled({ DEV: false })).toBe(false);
     expect(isTranslationsEnabled({ DEV: false, VITE_ENABLE_TRANSLATIONS: 'false' })).toBe(false);
+  });
+});
+
+describe('calendarSubscriptionUrl', () => {
+  it('opens the stable public feed through the WebCal handler', () => {
+    expect(calendarSubscriptionUrl('http://162.35.190.207/divinum-officium/'))
+      .toBe('webcal://162.35.190.207/calendars/rubrics-1960-pt.ics');
+  });
+
+  it('keeps the serving host and port so deployments remain portable', () => {
+    expect(calendarSubscriptionUrl('http://localhost:8080/divinum-officium/'))
+      .toBe('webcal://localhost:8080/calendars/rubrics-1960-pt.ics');
   });
 });

@@ -32,3 +32,9 @@ interface TranslationFeatureEnv {
 export function isTranslationsEnabled(env: TranslationFeatureEnv): boolean {
   return env.DEV === true || env.VITE_ENABLE_TRANSLATIONS === 'true';
 }
+
+/** Build a portable WebCal link using the host that served the calendar UI. */
+export function calendarSubscriptionUrl(pageUrl: string): string {
+  const feedUrl = new URL('/calendars/rubrics-1960-pt.ics', pageUrl);
+  return `webcal://${feedUrl.host}${feedUrl.pathname}${feedUrl.search}`;
+}

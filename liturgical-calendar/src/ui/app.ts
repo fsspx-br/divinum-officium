@@ -13,7 +13,12 @@ import type { CalendarDay } from '@engine/types';
 import { renderGrid } from './grid-view';
 import { renderAgenda } from './agenda-view';
 import { t, getLocale, setLocale, LOCALES, type Locale } from './i18n/i18n';
-import { versionSlug, escapeHtml, isTranslationsEnabled } from './app-utils';
+import {
+  versionSlug,
+  escapeHtml,
+  isTranslationsEnabled,
+  calendarSubscriptionUrl,
+} from './app-utils';
 import { applyOverrides, type Overrides } from './overrides';
 import { getOverrides, saveOverrides } from './translations-api';
 import { renderTranslationsEditor } from './translations';
@@ -285,15 +290,9 @@ function updateUIStrings(): void {
 
 // ── Subscribe Button ────────────────────────────────────────────────────────
 
-/**
- * Open the ICS file for the current version and year.
- * On mobile, this triggers the native calendar app to import the events.
- * On desktop, it downloads the file for import into a calendar application.
- */
+/** Open the stable feed in the device's calendar subscription handler. */
 function handleSubscribe(): void {
-  const icsUrl = new URL('/calendars/rubrics-1960-pt.ics', window.location.href).href;
-
-  window.location.href = icsUrl;
+  window.location.href = calendarSubscriptionUrl(window.location.href);
 }
 
 // ── Event Listeners ─────────────────────────────────────────────────────────
