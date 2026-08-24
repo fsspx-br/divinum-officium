@@ -37,6 +37,20 @@ describe('custom timed events', () => {
     expect(parsed).toMatchObject({ ...validInput, uid: event.uid, revision: '"revision-1"' });
   });
 
+  it('ignores DTSTART properties from a server-injected VTIMEZONE', () => {
+    const event = createEvent(validInput, new Date('2026-08-24T12:00:00Z'));
+    const ics = eventToIcs(event).replace('BEGIN:VEVENT', [
+      'BEGIN:VTIMEZONE',
+      'TZID:America/Sao_Paulo',
+      'BEGIN:STANDARD',
+      'DTSTART:20000227T000000',
+      'END:STANDARD',
+      'END:VTIMEZONE',
+      'BEGIN:VEVENT',
+    ].join('\r\n'));
+    expect(eventFromIcs(ics).date).toBe('2026-09-23');
+  });
+
   it('keeps the UID and increments sequence when edited', () => {
     const event = createEvent(validInput, new Date('2026-08-24T12:00:00Z'));
     const updated = updateEvent(event, { ...validInput, title: 'Missa solene' }, new Date('2026-08-25T12:00:00Z'));

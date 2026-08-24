@@ -139,7 +139,7 @@ export class CalDavStore {
     });
     if (response.status === 404) return { missing: true };
     if (response.status === 412) return { conflict: true };
-    if (response.status !== 204) throw new Error(`CalDAV delete failed (HTTP ${response.status})`);
+    if (![200, 204].includes(response.status)) throw new Error(`CalDAV delete failed (HTTP ${response.status})`);
     return { ok: true };
   }
 }

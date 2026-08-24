@@ -155,10 +155,16 @@ export function eventToIcs(event) {
 }
 
 export function eventFromIcs(ics, revision = '') {
-  const start = property(ics, 'DTSTART');
-  const end = property(ics, 'DTEND');
-  const created = property(ics, 'CREATED');
-  const updated = property(ics, 'LAST-MODIFIED') || property(ics, 'DTSTAMP');
+  // CalDAV servers may inject a VTIMEZONE containing its own DTSTART values.
+  // Restrict property parsing to VEVENT so those transitions are never
+  // mistaken for the event's date.
+  const eventBlock = unfoldIcs(ics).match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/i)?.[0];
+  if (!eventBlock) throw new Error('Calendar resource does not contain a VEVENT');
+
+  const start = property(eventBlock, 'DTSTART');
+  const end = property(eventBlock, 'DTEND');
+  const created = property(eventBlock, 'CREATED');
+  const updated = property(eventBlock, 'LAST-MODIFIED') || property(eventBlock, 'DTSTAMP');
 
   function isoTimestamp(value) {
     const match = value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/);
@@ -172,15 +178,15 @@ export function eventFromIcs(ics, revision = '') {
   if (!startMatch || !endMatch) throw new Error('Unsupported event date format');
 
   return {
-    uid: property(ics, 'UID'),
-    title: unescapeIcsText(property(ics, 'SUMMARY')),
+    uid: property(eventBlock, 'UID'),
+    title: unescapeIcsText(property(eventBlock, 'SUMMARY')),
     date: `${startMatch[1]}-${startMatch[2]}-${startMatch[3]}`,
     startTime: `${startMatch[4]}:${startMatch[5]}`,
     endTime: `${endMatch[4]}:${endMatch[5]}`,
-    timeZone: ics.match(/^DTSTART;TZID=([^:]+):/mi)?.[1] ?? DEFAULT_TIME_ZONE,
-    location: unescapeIcsText(property(ics, 'LOCATION')),
-    description: unescapeIcsText(property(ics, 'DESCRIPTION')),
-    sequence: Number(property(ics, 'SEQUENCE') || 0),
+    timeZone: eventBlock.match(/^DTSTART;TZID=([^:]+):/mi)?.[1] ?? DEFAULT_TIME_ZONE,
+    location: unescapeIcsText(property(eventBlock, 'LOCATION')),
+    description: unescapeIcsText(property(eventBlock, 'DESCRIPTION')),
+    sequence: Number(property(eventBlock, 'SEQUENCE') || 0),
     createdAt: isoTimestamp(created),
     updatedAt: isoTimestamp(updated),
     revision,
