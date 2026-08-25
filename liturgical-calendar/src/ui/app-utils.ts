@@ -38,3 +38,12 @@ export function calendarSubscriptionUrl(pageUrl: string): string {
   const feedUrl = new URL('/calendars/rubrics-1960-pt.ics', pageUrl);
   return `webcal://${feedUrl.host}${feedUrl.pathname}${feedUrl.search}`;
 }
+
+/** Build a descriptive, filesystem-safe filename for a downloaded calendar. */
+export function calendarDownloadFilename(
+  versionSlug: string,
+  year: number,
+  locale: string,
+): string {
+  return `divinum-officium-${versionSlug}-${year}-${locale}.ics`;
+}

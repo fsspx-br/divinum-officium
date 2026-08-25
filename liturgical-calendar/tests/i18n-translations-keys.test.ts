@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { setLocale, t } from '../src/ui/i18n/i18n';
 
 const KEYS = [
+  'controls.download',
   'nav.translations',
   'translations.title',
   'translations.search',

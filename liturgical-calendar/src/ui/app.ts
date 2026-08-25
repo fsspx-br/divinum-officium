@@ -5,7 +5,7 @@
  *  - Version selector
  *  - Year input
  *  - Grid / Agenda view toggle
- *  - Subscribe (.ics) button
+ *  - Subscribe and ICS download buttons
  *  - Calendar data loading from pre-generated JSON
  */
 
@@ -18,7 +18,9 @@ import {
   escapeHtml,
   isTranslationsEnabled,
   calendarSubscriptionUrl,
+  calendarDownloadFilename,
 } from './app-utils';
+import { generateICS } from '../ics/generator';
 import { applyOverrides, type Overrides } from './overrides';
 import { getOverrides, saveOverrides } from './translations-api';
 import { renderTranslationsEditor } from './translations';
@@ -87,6 +89,7 @@ const yearInput      = document.getElementById('year-input')       as HTMLInputE
 const btnGrid        = document.getElementById('btn-grid')         as HTMLButtonElement;
 const btnAgenda      = document.getElementById('btn-agenda')       as HTMLButtonElement;
 const btnSubscribe   = document.getElementById('btn-subscribe')    as HTMLButtonElement;
+const btnDownload    = document.getElementById('btn-download')     as HTMLButtonElement;
 const langSelect     = document.getElementById('lang-select')      as HTMLSelectElement;
 const calendarGrid   = document.getElementById('calendar-grid')    as HTMLDivElement;
 const calendarAgenda = document.getElementById('calendar-agenda')  as HTMLDivElement;
@@ -297,6 +300,7 @@ function updateUIStrings(): void {
   btnGrid.textContent = t('controls.grid');
   btnAgenda.textContent = t('controls.agenda');
   btnSubscribe.textContent = t('controls.subscribe');
+  btnDownload.textContent = t('controls.download');
   btnTranslations.textContent = t('nav.translations');
 
   // Update data-i18n elements (footer legend)
@@ -311,6 +315,28 @@ function updateUIStrings(): void {
 /** Open the stable feed in the device's calendar subscription handler. */
 function handleSubscribe(): void {
   window.location.href = calendarSubscriptionUrl(window.location.href);
+}
+
+/** Download the currently selected calendar as a localized ICS file. */
+function handleDownload(): void {
+  if (state.yearDays.length === 0) return;
+
+  const days = applyOverrides(state.yearDays, state.overrides, state.currentLocale);
+  const contents = generateICS(days, state.currentVersion.label, state.currentLocale);
+  const blobUrl = URL.createObjectURL(new Blob([contents], {
+    type: 'text/calendar;charset=utf-8',
+  }));
+  const link = document.createElement('a');
+  link.href = blobUrl;
+  link.download = calendarDownloadFilename(
+    state.currentVersion.slug,
+    state.currentYear,
+    state.currentLocale,
+  );
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(blobUrl), 0);
 }
 
 // ── Event Listeners ─────────────────────────────────────────────────────────
@@ -342,6 +368,7 @@ btnGrid.addEventListener('click', () => switchView('grid'));
 btnAgenda.addEventListener('click', () => switchView('agenda'));
 btnTranslations.addEventListener('click', () => switchView('translations'));
 btnSubscribe.addEventListener('click', handleSubscribe);
+btnDownload.addEventListener('click', handleDownload);
 
 langSelect.addEventListener('change', () => {
   const locale = langSelect.value as Locale;

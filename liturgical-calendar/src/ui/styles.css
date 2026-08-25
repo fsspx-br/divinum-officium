@@ -188,24 +188,41 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* ============================================================
-   Subscribe Button
+   Calendar Action Buttons
    ============================================================ */
-.subscribe-btn {
+.calendar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.calendar-action-btn {
   font-family: inherit;
   font-size: 0.875rem;
   font-weight: 600;
   padding: 0.4rem 1rem;
   border: none;
   border-radius: var(--radius);
-  background: var(--ui-subscribe);
   color: #fff;
   cursor: pointer;
   transition: background 0.15s;
   white-space: nowrap;
 }
 
+.subscribe-btn {
+  background: var(--ui-subscribe);
+}
+
 .subscribe-btn:hover {
   background: var(--ui-subscribe-hover);
+}
+
+.download-btn {
+  background: var(--ui-accent);
+}
+
+.download-btn:hover {
+  background: var(--ui-accent-hover);
 }
 
 /* ============================================================

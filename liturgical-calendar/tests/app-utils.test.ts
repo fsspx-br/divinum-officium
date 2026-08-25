@@ -4,6 +4,7 @@ import {
   escapeHtml,
   isTranslationsEnabled,
   calendarSubscriptionUrl,
+  calendarDownloadFilename,
 } from '../src/ui/app-utils';
 
 describe('versionSlug', () => {
@@ -109,5 +110,12 @@ describe('calendarSubscriptionUrl', () => {
   it('keeps the serving host and port so deployments remain portable', () => {
     expect(calendarSubscriptionUrl('http://localhost:8080/divinum-officium/'))
       .toBe('webcal://localhost:8080/calendars/rubrics-1960-pt.ics');
+  });
+});
+
+describe('calendarDownloadFilename', () => {
+  it('describes the selected version, year, and locale', () => {
+    expect(calendarDownloadFilename('Rubrics-1960-1960', 3000, 'pt'))
+      .toBe('divinum-officium-Rubrics-1960-1960-3000-pt.ics');
   });
 });
