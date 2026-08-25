@@ -13,14 +13,6 @@ import { t } from './i18n/i18n';
 import type { CustomEvent } from './custom-events';
 
 /**
- * Capitalise the first letter of a string.
- */
-function capitalize(s: string): string {
-  if (!s) return s;
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-/**
  * Zero-pad a number to 2 digits.
  */
 function pad2(n: number): string {
@@ -139,7 +131,7 @@ export function renderAgenda(
 
     const seasonEl = document.createElement('span');
     seasonEl.className = 'agenda-season';
-    seasonEl.textContent = capitalize(calDay.season.replace(/-/g, ' '));
+    seasonEl.textContent = t(`seasons.${calDay.season}`);
 
     const sep2 = document.createElement('span');
     sep2.textContent = '\u00b7';

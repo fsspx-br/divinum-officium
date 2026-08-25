@@ -62,4 +62,21 @@ describe('events API router', () => {
     }, store);
     expect(result.status).toBe(409);
   });
+
+  it('returns the public subscription as a streamed calendar response', async () => {
+    const store = makeStore();
+    const result = await handleEventRequest(
+      { method: 'GET', url: '/calendars/rubrics-1960-pt.ics', headers: {} },
+      store,
+      { distDir: '/tmp/litcal-events-server-missing' },
+    );
+    expect(result.status).toBe(200);
+    expect(result.headers['Content-Type']).toBe('text/calendar; charset=utf-8');
+    expect(result.stream).toBeDefined();
+
+    let body = '';
+    for await (const chunk of result.stream) body += chunk;
+    expect(body).toContain('BEGIN:VCALENDAR');
+    expect(body).toContain('END:VCALENDAR');
+  });
 });

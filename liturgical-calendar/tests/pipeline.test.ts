@@ -13,6 +13,7 @@ import {
   markEmberDays,
   applyPtTranslations,
   applyPtDateTranslations,
+  translatePtRankName,
 } from '../src/build/pipeline';
 import type { HolyDaysConfig } from '../src/build/pipeline';
 import type { CalendarDay } from '../src/engine/types';
@@ -345,7 +346,7 @@ describe('applyPtTranslations', () => {
     expect(result[0].celebration.name).toBe('S. André Apóstolo');
   });
 
-  it('uses the website-style Féria fallback for otherwise unmapped Latin ferias', () => {
+  it('translates otherwise unmapped Latin temporal names without discarding details', () => {
     const days = [makeDay({
       celebration: {
         name: 'Feria Tertia infra Hebdomadam XIX post Octavam Pentecostes',
@@ -355,7 +356,46 @@ describe('applyPtTranslations', () => {
       },
     })];
     const result = applyPtTranslations(days, {});
-    expect(result[0].celebration.name).toBe('Féria');
+    expect(result[0].celebration.name)
+      .toBe('Terça-feira da XIXª Semana depois da Oitava de Pentecostes');
+  });
+
+  it('translates ligature spellings in Saturday temporal names', () => {
+    const days = [
+      makeDay({ celebration: { name: 'Sabbato infra Hebdomadam II post Octavam Paschæ', rank: 1, rankName: 'Feria', source: 'temporal' } }),
+      makeDay({ celebration: { name: 'Sabbato infra Hebdomadam Septuagesimæ', rank: 1, rankName: 'Feria', source: 'temporal' } }),
+    ];
+    const result = applyPtTranslations(days, {});
+    expect(result[0].celebration.name).toBe('Sábado da IIª Semana depois da Oitava da Páscoa');
+    expect(result[1].celebration.name).toBe('Sábado da Semana da Septuagésima');
+  });
+
+  it('translates octave days used by pre-1960 rubrics', () => {
+    const days = [
+      makeDay({ celebration: { name: 'Secunda die infra Octavam Epiphaniæ', rank: 3, rankName: 'Semiduplex', source: 'temporal' } }),
+      makeDay({ celebration: { name: 'De IV die infra Octavam S. Joseph', rank: 3, rankName: 'Semiduplex', source: 'sanctoral' } }),
+      makeDay({ celebration: { name: 'De Dominica infra Octavam Epiphaniae', rank: 5, rankName: 'Semiduplex', source: 'temporal' } }),
+    ];
+    const result = applyPtTranslations(days, {});
+    expect(result[0].celebration.name).toBe('2º Dia na Oitava da Epifania');
+    expect(result[1].celebration.name).toBe('4º Dia na Oitava de São José');
+    expect(result[2].celebration.name).toBe('Domingo na Oitava da Epifania');
+  });
+
+  it('translates Latin rank names inherited from fallback files', () => {
+    expect(translatePtRankName('Duplex I classis cum Octava privilegiata III ordinis'))
+      .toBe('Duplo I classe com Oitava privilegiada III ordem');
+    expect(translatePtRankName('Feria major')).toBe('Féria maior');
+
+    const [result] = applyPtTranslations([makeDay({
+      celebration: {
+        name: 'Unknown Feast',
+        rank: 6,
+        rankName: 'Feria privilegiata Duplex I classis',
+        source: 'temporal',
+      },
+    })], {});
+    expect(result.celebration.rankName).toBe('Féria privilegiada Duplo I classe');
   });
 
   it('translates commemorations', () => {
@@ -388,7 +428,7 @@ describe('applyPtTranslations', () => {
     expect(result[0].season).toBe('lent');
     expect(result[0].color).toBe('violet');
     expect(result[0].celebration.rank).toBe(1);
-    expect(result[0].celebration.rankName).toBe('Feria');
+    expect(result[0].celebration.rankName).toBe('Féria');
   });
 });
 

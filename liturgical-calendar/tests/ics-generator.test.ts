@@ -24,6 +24,8 @@ const annunciation: CalendarDay = {
   },
   color: 'white',
   commemorations: [],
+  holyDayOfObligation: true,
+  abstinence: false,
 };
 
 const feriaWithComm: CalendarDay = {
@@ -161,6 +163,13 @@ describe('generateICS VEVENT', () => {
     expect(ics).toContain('Double of the First Class');
   });
 
+  it('puts explicit abstinence and obligation values in Apple Calendar notes', () => {
+    const unfolded = ics.replace(/\r\n /g, '');
+    expect(unfolded).toContain('Day of Abstinence: No');
+    expect(unfolded).toContain('Holy Day of Obligation: Yes');
+    expect(unfolded).toContain('\\nDay of Abstinence: No\\nHoly Day of Obligation: Yes');
+  });
+
   it('sets CATEGORIES with season and color', () => {
     expect(ics).toContain('CATEGORIES:lent,white');
   });
@@ -173,6 +182,31 @@ describe('generateICS VEVENT', () => {
     expect(ics).toContain('UID:');
     expect(ics).toContain('20260325');
     expect(ics).toContain('@divinum-officium');
+  });
+});
+
+describe('generateICS localization', () => {
+  it('uses Portuguese note labels and values for Portuguese data', () => {
+    const unfolded = generateICS([annunciation], 'Rubrics 1960 - 1960', 'pt')
+      .replace(/\r\n /g, '');
+    expect(unfolded).toContain('PRODID:-//Divinum Officium//Liturgical Calendar//PT-BR');
+    expect(unfolded).toContain('Classe: Double of the First Class');
+    expect(unfolded).toContain('Dia de Abstinência: Não');
+    expect(unfolded).toContain('Dia de Preceito: Sim');
+  });
+
+  it('uses Latin note labels for Latin data', () => {
+    const unfolded = generateICS([annunciation], 'Rubrics 1960 - 1960', 'la')
+      .replace(/\r\n /g, '');
+    expect(unfolded).toContain('PRODID:-//Divinum Officium//Liturgical Calendar//LA');
+    expect(unfolded).toContain('Dies Abstinentiae: Non');
+    expect(unfolded).toContain('Dies Praecepti: Ita');
+  });
+
+  it('handles the last generated date without truncating the next-day DTEND', () => {
+    const ics = generateICS([{ ...annunciation, date: '3000-12-31' }], 'Test', 'pt');
+    expect(ics).toContain('DTSTART;VALUE=DATE:30001231');
+    expect(ics).toContain('DTEND;VALUE=DATE:30010101');
   });
 });
 

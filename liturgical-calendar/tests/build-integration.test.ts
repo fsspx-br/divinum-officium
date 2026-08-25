@@ -283,4 +283,61 @@ describe('Portuguese translation regressions', () => {
 
     expect(untranslated, untranslated.join('\n')).toEqual([]);
   });
+
+  it('keeps celebration names and ranks translated at the end of the generated range', () => {
+    const latinCalendar = new LiturgicalCalendar(DATA_DIR, LATIN_OFFICE_DIR);
+    const portugueseCalendar = new LiturgicalCalendar(
+      DATA_DIR,
+      resolve(__dirname, '../../web/www/horas/Portugues'),
+      LATIN_OFFICE_DIR,
+    );
+    const version = 'Rubrics 1960 - 1960';
+    const latinDays = latinCalendar.getCalendarYear(3000, version);
+    const portugueseDays = applyPtTranslations(
+      portugueseCalendar.getCalendarYear(3000, version),
+      PT_TRANSLATIONS,
+    );
+    const normalize = (value: string): string => value
+      .normalize('NFKD')
+      .replace(/æ/giu, 'ae')
+      .replace(/\p{M}/gu, '')
+      .replace(/[^a-z0-9]/giu, '')
+      .toLowerCase();
+
+    expect(portugueseDays).toHaveLength(365);
+    expect(portugueseDays.at(-1)?.date).toBe('3000-12-31');
+
+    const untranslated = portugueseDays.flatMap((day, index) => {
+      const values: string[] = [];
+      if (normalize(day.celebration.name) === normalize(latinDays[index].celebration.name)) {
+        values.push(`${day.date}: ${day.celebration.name}`);
+      }
+      if (/\b(?:infra|Hebdomadam|Octavam|classis|Duplex|Feria)\b/iu.test(day.celebration.name)) {
+        values.push(`${day.date}: ${day.celebration.name}`);
+      }
+      if (/\b(?:classis|Duplex|Semiduplex|Feria|Simplex)\b/iu.test(day.celebration.rankName)) {
+        values.push(`${day.date} (rank): ${day.celebration.rankName}`);
+      }
+      return values;
+    });
+
+    expect(untranslated, untranslated.join('\n')).toEqual([]);
+  });
+
+  it('translates feasts and octaves retained by the pre-1960 calendars', () => {
+    const calendar = new LiturgicalCalendar(
+      DATA_DIR,
+      resolve(__dirname, '../../web/www/horas/Portugues'),
+      LATIN_OFFICE_DIR,
+    );
+    const version = 'Tridentine - 1906';
+    const days = applyPtTranslations(calendar.getCalendarYear(2424, version), PT_TRANSLATIONS);
+
+    expect(days.find((day) => day.date === '2424-01-01')?.celebration.name)
+      .toBe('Circuncisão do Senhor');
+    expect(days.find((day) => day.date === '2424-07-01')?.celebration.name)
+      .toBe('Na Oitava de São João Batista');
+    expect(days.find((day) => day.date === '2424-11-09')?.celebration.name)
+      .toBe('Dedicação da Basílica do Santíssimo Salvador (Latrão)');
+  });
 });

@@ -22,6 +22,7 @@ import {
 import { applyOverrides, type Overrides } from './overrides';
 import { getOverrides, saveOverrides } from './translations-api';
 import { renderTranslationsEditor } from './translations';
+import { CALENDAR_START_YEAR, CALENDAR_END_YEAR } from '../build/range';
 import {
   getCanManageEvents,
   getCustomEvents,
@@ -106,12 +107,27 @@ async function loadCalendarData(
   showLoading();
   const url = `./data/${locale}/${version.slug}/${year}.json`;
   try {
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status} – ${res.statusText}`);
+    const plainResponse = await fetch(url);
+    if (plainResponse.ok) {
+      try {
+        return await plainResponse.json() as CalendarDay[];
+      } catch {
+        // Static SPA fallbacks can return index.html with HTTP 200 for a
+        // missing JSON path. Try the compressed long-range asset next.
+      }
     }
-    const data: CalendarDay[] = await res.json();
-    return data;
+
+    const compressedResponse = await fetch(`${url}.gz`);
+    if (!compressedResponse.ok || !compressedResponse.body) {
+      throw new Error(`HTTP ${compressedResponse.status} – ${compressedResponse.statusText}`);
+    }
+    if (typeof DecompressionStream === 'undefined') {
+      throw new Error('This browser cannot read compressed calendar data.');
+    }
+
+    const stream = compressedResponse.body.pipeThrough(new DecompressionStream('gzip'));
+    const json = await new Response(stream).text();
+    return JSON.parse(json) as CalendarDay[];
   } catch (err) {
     const msg = t('states.error').replace('{version}', version.label).replace('{year}', String(year));
     const detail = err instanceof Error ? err.message : String(err);
@@ -193,6 +209,8 @@ async function loadEventsForYear(): Promise<void> {
  * If the year changes, data is reloaded.
  */
 async function handleMonthChange(newYear: number, newMonth: number): Promise<void> {
+  if (newYear < CALENDAR_START_YEAR || newYear > CALENDAR_END_YEAR) return;
+
   const yearChanged = newYear !== state.currentYear;
 
   state.currentMonth = newMonth;
@@ -307,7 +325,7 @@ versionSelect.addEventListener('change', () => {
 
 yearInput.addEventListener('change', () => {
   const newYear = parseInt(yearInput.value, 10);
-  if (!isNaN(newYear) && newYear >= 1900 && newYear <= 2100) {
+  if (!isNaN(newYear) && newYear >= CALENDAR_START_YEAR && newYear <= CALENDAR_END_YEAR) {
     state.currentYear = newYear;
     reloadAndRender();
   }

@@ -41,9 +41,11 @@ docker compose -f compose.production.yml up -d --build
 docker compose -f compose.production.yml ps
 ```
 
-The multi-stage Docker build compiles the website, generates all calendar JSON
-and ICS assets, packages Nginx, and packages the event API. Moving to another
-VPS therefore requires no prebuilt files from a developer workstation.
+The multi-stage Docker build compiles the website, generates calendar data for
+every year from 2025 through 3000, packages Nginx, and packages the event API.
+Long-range JSON is stored as `.json.gz`; the browser decompresses it when a
+plain rolling-window JSON file is unavailable. Moving to another VPS therefore
+requires no prebuilt files from a developer workstation.
 
 The calendar is served from `/divinum-officium/`. Translation overrides are
 stored in the `translations-data` Docker volume and survive container rebuilds.
@@ -54,8 +56,10 @@ volume. Public clients can subscribe to:
 http://SERVER/calendars/rubrics-1960-pt.ics
 ```
 
-The feed combines Portuguese Rubrics 1960 all-day celebrations with custom
-timed events. Calendar clients choose their own refresh interval.
+The feed combines Portuguese Rubrics 1960 all-day celebrations through 3000
+with custom timed events. Each all-day event includes explicit abstinence and
+holy-day-of-obligation values in its notes. Calendar clients choose their own
+refresh interval.
 
 Back up both named volumes regularly:
 

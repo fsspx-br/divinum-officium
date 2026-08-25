@@ -1,7 +1,8 @@
 import { createServer } from 'node:http';
+import { once } from 'node:events';
 import { CalDavStore } from './caldav.js';
 import { createEvent, updateEvent, validateEventInput } from './event.js';
-import { generatePublicFeed } from './feed.js';
+import { generatePublicFeedChunks } from './feed.js';
 
 const PORT = Number(process.env.PORT || 8091);
 const DIST_DIR = process.env.LITURGICAL_DIST || '/calendar-dist';
@@ -69,16 +70,14 @@ export async function handleEventRequest({ method, url, bodyText = '', headers =
 
   if (path === '/calendars/rubrics-1960-pt.ics' && method === 'GET') {
     const events = await store.list();
-    const feed = await generatePublicFeed({ distDir: options.distDir || DIST_DIR, events, now: options.now });
-    if (headers['if-none-match'] === feed.etag) return { status: 304, body: '', headers: { ETag: feed.etag } };
     return {
       status: 200,
-      body: feed.body,
+      body: '',
+      stream: generatePublicFeedChunks({ distDir: options.distDir || DIST_DIR, events }),
       headers: {
         'Content-Type': 'text/calendar; charset=utf-8',
         'Content-Disposition': 'inline; filename="calendario-liturgico-1960.ics"',
         'Cache-Control': 'public, max-age=60',
-        ETag: feed.etag,
       },
     };
   }
@@ -104,7 +103,14 @@ function startServer() {
         headers: req.headers,
       }, store);
       res.writeHead(result.status, result.headers);
-      res.end(result.body);
+      if (result.stream) {
+        for await (const chunk of result.stream) {
+          if (!res.write(chunk)) await once(res, 'drain');
+        }
+        res.end();
+      } else {
+        res.end(result.body);
+      }
     } catch (error) {
       console.error(error);
       res.writeHead(503, { 'Content-Type': 'application/json; charset=utf-8' });

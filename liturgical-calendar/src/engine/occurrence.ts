@@ -13,6 +13,26 @@ import { getWeek, getSday, dayOfWeek, monthDay } from './date';
 import { parseRankField } from './parser';
 import type { Directorium } from './directorium';
 
+// Calendar builds resolve the same finite set of office files millions of
+// times. Cache immutable source reads and parsed lookups so generating the
+// long-range calendar does not repeatedly hit the filesystem.
+const officeFileCache = new Map<string, string | null>();
+const rankCache = new Map<string, string>();
+const officeNameCache = new Map<string, string>();
+
+function readOfficeFile(filePath: string): string | null {
+  if (officeFileCache.has(filePath)) return officeFileCache.get(filePath)!;
+
+  try {
+    const content = readFileSync(filePath, 'utf-8');
+    officeFileCache.set(filePath, content);
+    return content;
+  } catch {
+    officeFileCache.set(filePath, null);
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // OccurrenceResult
 // ---------------------------------------------------------------------------
@@ -118,25 +138,33 @@ function conditionMatchesVersion(condition: string, version: string): boolean {
  * `(rubrica ...)` condition matches the version, use the line following it instead.
  */
 export function getRankFromFile(officeDir: string, filename: string, version: string, depth = 0, fallbackOfficeDir?: string): string {
+  const cacheKey = [officeDir, filename, version, depth, fallbackOfficeDir ?? ''].join('\0');
+  const cached = rankCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+
+  const rank = getRankFromFileUncached(officeDir, filename, version, depth, fallbackOfficeDir);
+  rankCache.set(cacheKey, rank);
+  return rank;
+}
+
+function getRankFromFileUncached(officeDir: string, filename: string, version: string, depth = 0, fallbackOfficeDir?: string): string {
   if (depth > 5) return ''; // Prevent infinite redirect loops
 
   const filePath = resolve(officeDir, filename.endsWith('.txt') ? filename : `${filename}.txt`);
 
-  let content: string;
-  try {
-    content = readFileSync(filePath, 'utf-8');
-  } catch {
+  const content = readOfficeFile(filePath);
+  if (content === null) {
     // File not found in primary dir — try fallback (e.g. Latin) to resolve redirects
     if (fallbackOfficeDir && fallbackOfficeDir !== officeDir) {
       const fbPath = resolve(fallbackOfficeDir, filename.endsWith('.txt') ? filename : `${filename}.txt`);
-      try {
-        const fbContent = readFileSync(fbPath, 'utf-8');
+      const fbContent = readOfficeFile(fbPath);
+      if (fbContent !== null) {
         const fbFirst = fbContent.split('\n')[0].trim();
         if (fbFirst.startsWith('@')) {
           // Fallback file is a redirect — follow it back in the primary dir
           return getRankFromFile(officeDir, fbFirst.slice(1).trim(), version, depth + 1, fallbackOfficeDir);
         }
-      } catch { /* fallback file also missing */ }
+      }
       // Fallback file exists but isn't a redirect — read rank from fallback directly
       return getRankFromFile(fallbackOfficeDir, filename, version, depth, undefined);
     }
@@ -517,24 +545,32 @@ export function resolveOccurrence(
  * Used as fallback when the [Rank] field has no name component.
  */
 function extractNameFromFile(officeDir: string, filename: string, depth = 0, fallbackOfficeDir?: string): string {
+  const cacheKey = [officeDir, filename, depth, fallbackOfficeDir ?? ''].join('\0');
+  const cached = officeNameCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+
+  const name = extractNameFromFileUncached(officeDir, filename, depth, fallbackOfficeDir);
+  officeNameCache.set(cacheKey, name);
+  return name;
+}
+
+function extractNameFromFileUncached(officeDir: string, filename: string, depth = 0, fallbackOfficeDir?: string): string {
   if (!filename || depth > 5) return filename || '';
 
   const filePath = resolve(officeDir, filename.endsWith('.txt') ? filename : `${filename}.txt`);
 
-  let content: string;
-  try {
-    content = readFileSync(filePath, 'utf-8');
-  } catch {
+  const content = readOfficeFile(filePath);
+  if (content === null) {
     // File not found — try fallback to resolve redirects
     if (fallbackOfficeDir && fallbackOfficeDir !== officeDir) {
       const fbPath = resolve(fallbackOfficeDir, filename.endsWith('.txt') ? filename : `${filename}.txt`);
-      try {
-        const fbContent = readFileSync(fbPath, 'utf-8');
+      const fbContent = readOfficeFile(fbPath);
+      if (fbContent !== null) {
         const fbFirst = fbContent.split('\n')[0].trim();
         if (fbFirst.startsWith('@')) {
           return extractNameFromFile(officeDir, fbFirst.slice(1).trim(), depth + 1, fallbackOfficeDir);
         }
-      } catch { /* fallback also missing */ }
+      }
       return extractNameFromFile(fallbackOfficeDir, filename, depth, undefined);
     }
     return filename;

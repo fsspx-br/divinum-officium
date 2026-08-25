@@ -13,6 +13,52 @@ import type { CalendarDay } from '../engine/types';
 const CRLF = '\r\n';
 const MAX_LINE_OCTETS = 75;
 
+export type ICSLocale = 'en' | 'pt' | 'la';
+
+interface ICSLabels {
+  language: string;
+  rank: string;
+  commemorations: string;
+  transferredFrom: string;
+  abstinence: string;
+  holyDayOfObligation: string;
+  yes: string;
+  no: string;
+}
+
+const ICS_LABELS: Record<ICSLocale, ICSLabels> = {
+  en: {
+    language: 'EN',
+    rank: 'Rank',
+    commemorations: 'Commemorations',
+    transferredFrom: 'Transferred from',
+    abstinence: 'Day of Abstinence',
+    holyDayOfObligation: 'Holy Day of Obligation',
+    yes: 'Yes',
+    no: 'No',
+  },
+  pt: {
+    language: 'PT-BR',
+    rank: 'Classe',
+    commemorations: 'Comemorações',
+    transferredFrom: 'Transferido de',
+    abstinence: 'Dia de Abstinência',
+    holyDayOfObligation: 'Dia de Preceito',
+    yes: 'Sim',
+    no: 'Não',
+  },
+  la: {
+    language: 'LA',
+    rank: 'Classis',
+    commemorations: 'Commemorationes',
+    transferredFrom: 'Translatum ex',
+    abstinence: 'Dies Abstinentiae',
+    holyDayOfObligation: 'Dies Praecepti',
+    yes: 'Ita',
+    no: 'Non',
+  },
+};
+
 // ---------------------------------------------------------------------------
 // Exported helpers
 // ---------------------------------------------------------------------------
@@ -87,7 +133,7 @@ function foldLine(line: string): string {
 /**
  * Build a single VEVENT block for a CalendarDay.
  */
-function buildVEVENT(day: CalendarDay, versionLabel: string): string {
+function buildVEVENT(day: CalendarDay, versionLabel: string, labels: ICSLabels): string {
   const dtstart = formatICSDate(day.date);
 
   // DTEND = next calendar day (all-day event)
@@ -105,15 +151,20 @@ function buildVEVENT(day: CalendarDay, versionLabel: string): string {
   // SUMMARY
   const summary = escapeText(day.celebration.name);
 
-  // DESCRIPTION: rank + commemorations
-  const descParts: string[] = [`Rank: ${day.celebration.rankName}`];
+  // DESCRIPTION is shown as Notes by Apple Calendar. Always include both
+  // discipline flags so "no" is explicit rather than inferred from absence.
+  const descParts: string[] = [
+    `${labels.rank}: ${day.celebration.rankName}`,
+    `${labels.abstinence}: ${day.abstinence ? labels.yes : labels.no}`,
+    `${labels.holyDayOfObligation}: ${day.holyDayOfObligation ? labels.yes : labels.no}`,
+  ];
   if (day.commemorations.length > 0) {
-    descParts.push(`Commemorations: ${day.commemorations.join('; ')}`);
+    descParts.push(`${labels.commemorations}: ${day.commemorations.join('; ')}`);
   }
   if (day.transferredFrom) {
-    descParts.push(`Transferred from: ${day.transferredFrom}`);
+    descParts.push(`${labels.transferredFrom}: ${day.transferredFrom}`);
   }
-  const description = escapeText(descParts.join('\\n'));
+  const description = escapeText(descParts.join('\n'));
 
   // CATEGORIES
   const categories = `${day.season},${day.color}`;
@@ -143,8 +194,13 @@ function buildVEVENT(day: CalendarDay, versionLabel: string): string {
  * @param days         Array of CalendarDay (typically one full year).
  * @param versionLabel Human-readable version name, used in CALNAME and UIDs.
  */
-export function generateICS(days: CalendarDay[], versionLabel: string): string {
-  const prodid = '-//Divinum Officium//Liturgical Calendar//EN';
+export function generateICS(
+  days: CalendarDay[],
+  versionLabel: string,
+  locale: ICSLocale = 'en',
+): string {
+  const labels = ICS_LABELS[locale];
+  const prodid = `-//Divinum Officium//Liturgical Calendar//${labels.language}`;
   const calName = escapeText(`Divinum Officium – ${versionLabel}`);
 
   const header = [
@@ -158,7 +214,7 @@ export function generateICS(days: CalendarDay[], versionLabel: string): string {
     .map(foldLine)
     .join(CRLF);
 
-  const events = days.map((day) => buildVEVENT(day, versionLabel)).join(CRLF);
+  const events = days.map((day) => buildVEVENT(day, versionLabel, labels)).join(CRLF);
 
   const footer = 'END:VCALENDAR';
 
