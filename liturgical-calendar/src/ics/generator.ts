@@ -13,7 +13,7 @@ import type { CalendarDay } from '../engine/types';
 const CRLF = '\r\n';
 const MAX_LINE_OCTETS = 75;
 
-export type ICSLocale = 'en' | 'pt' | 'la';
+export type ICSLocale = 'pt' | 'la';
 
 interface ICSLabels {
   language: string;
