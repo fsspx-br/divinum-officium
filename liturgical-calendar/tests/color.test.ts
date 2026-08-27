@@ -194,6 +194,17 @@ describe('getLiturgicalColor', () => {
     expect(getLiturgicalColor('pentecost', 'Feria II', 'Feria', 1)).toBe('green');
   });
 
+  it('returns green for a feria after the Octave of Pentecost', () => {
+    expect(
+      getLiturgicalColor(
+        'pentecost',
+        'Feria Quarta infra Hebdomadam XIII post Octavam Pentecostes',
+        'Feria',
+        1,
+      ),
+    ).toBe('green');
+  });
+
   it('returns green for ordinary post-Pentecost Sunday', () => {
     expect(getLiturgicalColor('pentecost', 'Dominica III post Pentecosten', 'Semiduplex', 5)).toBe(
       'green',

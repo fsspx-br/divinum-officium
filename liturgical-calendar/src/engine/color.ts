@@ -44,7 +44,10 @@ export function getLiturgicalColor(
   // 2. Pentecost Sunday
   // weekRef Pasc7 maps to the Pentecost Sunday mass; the celebration name
   // typically contains "Dominica Pentecostes" or "In Die Pentecostes"
-  if (/pentecostes|pentecosten|whitsunday/i.test(name) && !/post pentecosten|post pentecost/i.test(name)) {
+  if (
+    /pentecostes|pentecosten|whitsunday/i.test(name) &&
+    !/post(?:\s+octavam)?\s+pentecost/i.test(name)
+  ) {
     return 'red';
   }
 

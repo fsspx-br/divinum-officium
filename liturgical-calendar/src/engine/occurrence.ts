@@ -1,9 +1,11 @@
 /**
  * occurrence.ts — Occurrence/Precedence resolution module
  *
- * Simplified TypeScript port of the occurrence() function from horascommon.pl.
+ * Day-level TypeScript port of the occurrence() function from horascommon.pl.
  * Given a date and version, resolves which liturgical office wins between
- * the temporal (season) and sanctoral (saints) cycles.
+ * the temporal (season) and sanctoral (saints) cycles, including the
+ * commemorations retained by each rubric family. Hour-specific details such
+ * as first/second Vespers are intentionally outside the calendar-day model.
  */
 
 import { readFileSync } from 'fs';
@@ -19,6 +21,7 @@ import type { Directorium } from './directorium';
 const officeFileCache = new Map<string, string | null>();
 const rankCache = new Map<string, string>();
 const officeNameCache = new Map<string, string>();
+const officeRuleCache = new Map<string, string>();
 
 function readOfficeFile(filePath: string): string | null {
   if (officeFileCache.has(filePath)) return officeFileCache.get(filePath)!;
@@ -48,43 +51,34 @@ export interface OccurrenceResult {
 // Version-matching helpers for [Rank] selection
 // ---------------------------------------------------------------------------
 
-/**
- * Map a version string to the rubrica keywords it matches in office file
- * conditional blocks like `(sed rubrica 196)` or `(rubrica tridentina)`.
- */
-function versionRubricaKeys(version: string): string[] {
-  const keys: string[] = [];
-  const v = version.toLowerCase();
+function rubricaPredicateMatches(predicate: string, version: string): boolean {
+  const normalized = predicate.trim().replace(/\s+/g, ' ');
+  if (!normalized) return false;
 
-  if (v.includes('1960') || v.includes('196')) {
-    keys.push('196', '1960');
-  }
-  if (v.includes('1955') || v.includes('reduced')) {
-    keys.push('1955');
-  }
-  if (v.includes('divino')) {
-    keys.push('divino');
-  }
-  if (v.includes('trident') || v.includes('1570') || v.includes('1888') || v.includes('1906')) {
-    keys.push('tridentina', 'trident');
-  }
-  if (v.includes('monastic')) {
-    keys.push('monastic');
-  }
-  if (v.includes('cist')) {
-    keys.push('cisterciensis', 'cist');
-  }
-  if (v.includes('1930')) {
-    keys.push('1930');
-  }
-  if (v.includes('1963')) {
-    keys.push('1963');
-  }
-  if (v.includes('innovata') || v.includes('newcal') || v.includes('2020')) {
-    keys.push('innovata');
-  }
+  // SetupString.pl defines these named predicates instead of treating them
+  // as literal substrings of the version label.
+  if (/^trident(?:ina)?$/i.test(normalized)) return /trident/i.test(version);
+  if (/^monastic[ao]?$/i.test(normalized)) return /monastic/i.test(version);
+  if (/^innovatis?$/i.test(normalized)) return /2020 USA|NewCal|innovata/i.test(version);
 
-  return keys;
+  try {
+    // The original vero() evaluator treats every other rubrica predicate as
+    // a regular expression tested against the complete version string. This
+    // makes `196` match both 1960 and 1963, while `1963` does not match 1960.
+    return new RegExp(normalized, 'i').test(version);
+  } catch {
+    return false;
+  }
+}
+
+function rubricaClauseMatches(clause: string, version: string): boolean {
+  const match = clause.trim().match(/^rubric(?:a|is)\s+(.+?)$/i);
+  if (!match) return false;
+
+  const predicate = match[1]
+    .replace(/\s+(?:dicitur|dicuntur|omittitur|omittuntur).*$/i, '')
+    .trim();
+  return rubricaPredicateMatches(predicate, version);
 }
 
 /**
@@ -94,27 +88,31 @@ function versionRubricaKeys(version: string): string[] {
  * Supports `aut` (OR) and `nisi` (NOT) connectives.
  */
 function conditionMatchesVersion(condition: string, version: string): boolean {
-  const keys = versionRubricaKeys(version);
-  if (keys.length === 0) return false;
-
   const lower = condition.toLowerCase();
 
   // Split on 'aut' to get OR-alternatives
   const alternatives = lower.split(/\s+aut\s+/);
 
   for (const alt of alternatives) {
-    // Check for 'nisi' (except) clauses
-    const nisiParts = alt.split(/\s+nisi\s+/);
-    const mainPart = nisiParts[0];
-    const exceptParts = nisiParts.slice(1);
+    const parts = alt.split(/\s+(et|nisi)\s+/);
+    let negate = false;
+    let matches = true;
 
-    // Check if the main part matches any of our keys
-    const mainMatches = keys.some(k => mainPart.includes(k));
-    if (!mainMatches) continue;
+    for (const part of parts) {
+      if (part === 'et') continue;
+      if (part === 'nisi') {
+        negate = true;
+        continue;
+      }
 
-    // Check nisi (except) clauses — if any nisi clause matches, this alternative is excluded
-    const excluded = exceptParts.some(ep => keys.some(k => ep.includes(k)));
-    if (!excluded) return true;
+      const clauseMatches = rubricaClauseMatches(part, version);
+      if (negate ? clauseMatches : !clauseMatches) {
+        matches = false;
+        break;
+      }
+    }
+
+    if (matches) return true;
   }
 
   return false;
@@ -256,6 +254,105 @@ function getRankFromFileUncached(officeDir: string, filename: string, version: s
 }
 
 // ---------------------------------------------------------------------------
+// Read [Rule] from office file
+// ---------------------------------------------------------------------------
+
+/**
+ * Read the effective [Rule] section used for occurrence decisions.
+ *
+ * The upstream Perl engine consults this metadata for rules such as
+ * `Festum Domini`, `No commemoratio`, and `Omit ... Commemoratio`. Locale
+ * files are sometimes partial, so the Latin fallback is used when the
+ * selected locale does not provide the section.
+ */
+export function getRuleFromFile(
+  officeDir: string,
+  filename: string,
+  version: string,
+  depth = 0,
+  fallbackOfficeDir?: string,
+): string {
+  const cacheKey = [officeDir, filename, version, depth, fallbackOfficeDir ?? ''].join('\0');
+  const cached = officeRuleCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+
+  const rule = getRuleFromFileUncached(
+    officeDir,
+    filename,
+    version,
+    depth,
+    fallbackOfficeDir,
+  );
+  officeRuleCache.set(cacheKey, rule);
+  return rule;
+}
+
+function getRuleFromFileUncached(
+  officeDir: string,
+  filename: string,
+  version: string,
+  depth = 0,
+  fallbackOfficeDir?: string,
+): string {
+  if (depth > 5) return '';
+
+  const filePath = resolve(officeDir, filename.endsWith('.txt') ? filename : `${filename}.txt`);
+  const content = readOfficeFile(filePath);
+
+  if (content === null) {
+    if (fallbackOfficeDir && fallbackOfficeDir !== officeDir) {
+      return getRuleFromFile(fallbackOfficeDir, filename, version, depth, undefined);
+    }
+    return '';
+  }
+
+  const lines = content.split('\n');
+  const firstLine = lines[0]?.trim() ?? '';
+  const ruleLines: string[] = [];
+  let inRuleSection = false;
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (/^\[Rule\]$/i.test(line)) {
+      inRuleSection = true;
+      continue;
+    }
+    if (inRuleSection && /^\[.+\]$/.test(line)) break;
+    if (!inRuleSection || !line) continue;
+
+    // setupstring accepts conditional rule lines of the form
+    // `(rubrica divino aut rubrica 1955) Festum Domini`.
+    const conditional = line.match(/^\((.+?)\)\s*(.*)$/);
+    if (conditional) {
+      if (conditionMatchesVersion(conditional[1], version) && conditional[2]) {
+        ruleLines.push(conditional[2]);
+      }
+      continue;
+    }
+
+    ruleLines.push(line);
+  }
+
+  if (ruleLines.length > 0) return ruleLines.join('\n');
+
+  // A redirecting office inherits metadata unless it overrides [Rule].
+  if (firstLine.startsWith('@')) {
+    return getRuleFromFile(
+      officeDir,
+      firstLine.slice(1).trim(),
+      version,
+      depth + 1,
+      fallbackOfficeDir,
+    );
+  }
+
+  if (fallbackOfficeDir && fallbackOfficeDir !== officeDir) {
+    return getRuleFromFile(fallbackOfficeDir, filename, version, depth, undefined);
+  }
+  return '';
+}
+
+// ---------------------------------------------------------------------------
 // resolveOccurrence
 // ---------------------------------------------------------------------------
 
@@ -386,9 +483,11 @@ export function resolveOccurrence(
   // -----------------------------------------------------------------------
   let sRankStr = '';
   let sParsed: ParsedRank = { name: '', rankType: '', numericRank: 0 };
+  let sRule = '';
 
   if (sfile) {
     sRankStr = getRankFromFile(officeDir, sfile, version, 0, fallbackOfficeDir);
+    sRule = getRuleFromFile(officeDir, sfile, version, 0, fallbackOfficeDir);
     if (sRankStr) {
       sParsed = parseRankField(sRankStr);
       if (!sParsed.name) {
@@ -422,14 +521,17 @@ export function resolveOccurrence(
   // -----------------------------------------------------------------------
   const vIs1960 = /196/.test(version);
   const vIs1955 = /1955/.test(version) || (/monastic/i.test(version) && /divino/i.test(version));
+  let sanctoralSuppressed = false;
 
   // High temporal rank suppresses low sanctoral
   if (
     (tParsed.numericRank >= ((vIs1960 || vIs1955) ? 6 : 7) && sParsed.numericRank < 6) ||
     (tParsed.numericRank >= 6 && sParsed.numericRank < 2.1 && !isSunday && !/feria|sabbato|in octava/i.test(tParsed.name))
   ) {
+    sanctoralSuppressed = true;
     sRankStr = '';
     sParsed = { name: '', rankType: '', numericRank: 0 };
+    sRule = '';
     sfile = '';
   }
 
@@ -439,8 +541,10 @@ export function resolveOccurrence(
       (tParsed.numericRank >= 6 && sParsed.numericRank < 6) ||
       (tParsed.numericRank >= 5 && sParsed.numericRank < 5)
     ) {
+      sanctoralSuppressed = true;
       sRankStr = '';
       sParsed = { name: '', rankType: '', numericRank: 0 };
+      sRule = '';
       sfile = '';
     }
   }
@@ -475,14 +579,24 @@ export function resolveOccurrence(
     // Sunday special rules
     if (vIs1960) {
       // 1960: II cl feasts of the Lord + all I cl beat II cl Sundays
-      if (tParsed.numericRank <= 5 && (sParsed.numericRank >= 6 || sParsed.numericRank >= 5)) {
+      if (
+        tParsed.numericRank <= 5 &&
+        (sParsed.numericRank >= 6 || (sParsed.numericRank >= 5 && /Festum Domini/i.test(sRule)))
+      ) {
+        sanctoralWins = true;
+      } else if (/Conceptione Immaculata/i.test(sParsed.name)) {
+        // Rubricae generales 15: the Immaculate Conception is preferred to
+        // the Second Sunday of Advent in occurrence.
         sanctoralWins = true;
       }
     } else {
       // Pre-1960: feasts of the Lord with sufficient rank beat minor Sundays
-      if (sParsed.numericRank >= 2 && tParsed.numericRank <= 5) {
-        // This is a simplified check; the full logic checks Rule for "Festum Domini"
-        sanctoralWins = false; // Conservative: let temporal win on Sundays pre-1960 by default
+      if (
+        /Festum Domini/i.test(sRule) &&
+        sParsed.numericRank >= 2 &&
+        tParsed.numericRank <= 5
+      ) {
+        sanctoralWins = true;
       }
     }
   }
@@ -491,11 +605,36 @@ export function resolveOccurrence(
   // 8. Build result
   // -----------------------------------------------------------------------
   const commemorations: string[] = [];
+  const pushCommemoration = (name: string): void => {
+    if (name && !commemorations.includes(name)) commemorations.push(name);
+  };
+
+  const tRule = tfile
+    ? getRuleFromFile(officeDir, tfile, version, 0, fallbackOfficeDir)
+    : '';
+  const temporalForbidsCommemorations =
+    /omit.*commemoratio|no commemoration?/i.test(tRule);
+
+  // Day-level equivalent of upstream climit1960(). A return value of 2 in
+  // horascommon.pl means the saint is commemorated at Lauds (and at Mass),
+  // which still belongs in a whole-day calendar record.
+  const sanctoralMayBeCommemorated = (rank: number): boolean => {
+    if (!rank || sanctoralSuppressed || temporalForbidsCommemorations) return false;
+    if (!vIs1960) return true;
+    if (isSunday) return rank >= 5;
+    if (rank >= 6) return true;
+    return rank > 1;
+  };
 
   if (sanctoralWins) {
     // Sanctoral wins — temporal may be commemorated
-    if (tParsed.numericRank >= 1.5 && tParsed.numericRank < 7 && tfile) {
-      commemorations.push(tParsed.name || tfile);
+    const temporalCommemorationLimit = sParsed.numericRank >= 5 ? 2.1 : 1.5;
+    if (
+      tParsed.numericRank >= temporalCommemorationLimit &&
+      tParsed.numericRank < 7 &&
+      tfile
+    ) {
+      pushCommemoration(tParsed.name || tfile);
     }
     // Add any sanctoral commemoration candidates
     for (const c of commemoCandidates) {
@@ -503,7 +642,7 @@ export function resolveOccurrence(
       if (cRank) {
         const parsed = parseRankField(cRank);
         if (parsed.name) {
-          commemorations.push(parsed.name);
+          pushCommemoration(parsed.name);
         }
       }
     }
@@ -520,9 +659,34 @@ export function resolveOccurrence(
       transferredFrom,
     };
   } else {
-    // Temporal wins — sanctoral may be commemorated
-    if (sParsed.numericRank >= 1.5 && sfile) {
-      commemorations.push(sParsed.name || sfile);
+    // Temporal wins — preserve every commemoration allowed by the upstream
+    // rubric logic, including former Simplex offices (rank 1.1) in 1955/1960.
+    if (sfile && sanctoralMayBeCommemorated(sParsed.numericRank)) {
+      pushCommemoration(sParsed.name || sfile);
+    }
+
+    if (!sanctoralSuppressed && !temporalForbidsCommemorations) {
+      for (const candidate of commemoCandidates) {
+        const rank = getRankFromFile(
+          officeDir,
+          candidate,
+          version,
+          0,
+          fallbackOfficeDir,
+        );
+        if (!rank) continue;
+        const parsed = parseRankField(rank);
+        if (sanctoralMayBeCommemorated(parsed.numericRank)) {
+          pushCommemoration(
+            parsed.name || extractNameFromFile(
+              officeDir,
+              candidate,
+              0,
+              fallbackOfficeDir,
+            ),
+          );
+        }
+      }
     }
 
     return {

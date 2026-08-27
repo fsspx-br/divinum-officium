@@ -311,7 +311,19 @@ describe('Portuguese translation regressions', () => {
     expect(translated.celebration.name).toBe('São Bartolomeu, Apóstolo');
   });
 
-  it('leaves no Latin-only titles in the Rubrics 1960 Portuguese calendar for 2026', () => {
+  it('retains and translates St. Zephyrinus as the August 26 commemoration', () => {
+    const day = portugueseCalendar.getCalendarDay(
+      new Date(TEST_YEAR, 7, 26),
+      'Rubrics 1960 - 1960',
+    );
+    const [translated] = applyPtTranslations([day], PT_TRANSLATIONS);
+
+    expect(translated.celebration.name).toBe('Féria');
+    expect(translated.color).toBe('green');
+    expect(translated.commemorations).toContain('São Zeferino, Papa e Mártir');
+  });
+
+  it('leaves no Latin-only titles in any Portuguese rubric from 2025 through 2032', () => {
     const latinCalendar = new LiturgicalCalendar(
       DATA_DIR,
       LATIN_OFFICE_DIR,
@@ -324,33 +336,53 @@ describe('Portuguese translation regressions', () => {
       LATIN_OFFICE_DIR,
       BRASILIA_TEMPORA_FILE,
     );
-    const version = 'Rubrics 1960 - 1960';
-    const latinDays = latinCalendar.getCalendarYear(TEST_YEAR, version);
-    const portugueseDays = applyPtDateTranslations(
-      applyPtTranslations(portugueseCalendar.getCalendarYear(TEST_YEAR, version), PT_TRANSLATIONS),
-      PT_DATE_TRANSLATIONS,
-    );
     const normalize = (value: string): string => value
       .normalize('NFKD')
       .replace(/æ/giu, 'ae')
       .replace(/\p{M}/gu, '')
       .replace(/[^a-z0-9]/giu, '')
       .toLowerCase();
+    const latinVocabulary = /\b(?:Sancti?|Sanctae|Sanctæ|Beati?|Beatae|Beatæ|Dominica|Feria|Vigilia|Martyr(?:is|um)|Confessoris|Episcopi|Papae|Papæ|Virginis|Apostoli|Evangelistae|Ecclesiae|Ecclesiæ|Doctoris|Sociorum|Abbatis|infra|Hebdomadam|Octavam|Quattuor|Temporum|Adventus|Nativitatis|Epiphaniæ)\b/iu;
     const untranslated: string[] = [];
 
-    for (let index = 0; index < latinDays.length; index++) {
-      const latinDay = latinDays[index];
-      const portugueseDay = portugueseDays[index];
-      if (normalize(latinDay.celebration.name) === normalize(portugueseDay.celebration.name)) {
-        untranslated.push(`${latinDay.date}: ${latinDay.celebration.name}`);
-      }
-      for (let commemorationIndex = 0;
-        commemorationIndex < latinDay.commemorations.length;
-        commemorationIndex++) {
-        const latinName = latinDay.commemorations[commemorationIndex];
-        const portugueseName = portugueseDay.commemorations[commemorationIndex];
-        if (portugueseName && normalize(latinName) === normalize(portugueseName)) {
-          untranslated.push(`${latinDay.date} (commemoration): ${latinName}`);
+    for (let year = 2025; year <= 2032; year++) {
+      for (const version of VERSIONS) {
+        const latinDays = latinCalendar.getCalendarYear(year, version);
+        let portugueseDays = applyPtTranslations(
+          portugueseCalendar.getCalendarYear(year, version),
+          PT_TRANSLATIONS,
+        );
+        if (year === TEST_YEAR) {
+          portugueseDays = applyPtDateTranslations(portugueseDays, PT_DATE_TRANSLATIONS);
+        }
+
+        for (let index = 0; index < latinDays.length; index++) {
+          const latinDay = latinDays[index];
+          const portugueseDay = portugueseDays[index];
+          const celebrationIsLatin =
+            normalize(latinDay.celebration.name) === normalize(portugueseDay.celebration.name) ||
+            latinVocabulary.test(portugueseDay.celebration.name);
+          if (celebrationIsLatin) {
+            untranslated.push(
+              `${latinDay.date} (${version}): ${portugueseDay.celebration.name}`,
+            );
+          }
+
+          for (let commemorationIndex = 0;
+            commemorationIndex < latinDay.commemorations.length;
+            commemorationIndex++) {
+            const latinName = latinDay.commemorations[commemorationIndex];
+            const portugueseName = portugueseDay.commemorations[commemorationIndex];
+            const commemorationIsLatin = portugueseName && (
+              normalize(latinName) === normalize(portugueseName) ||
+              latinVocabulary.test(portugueseName)
+            );
+            if (commemorationIsLatin) {
+              untranslated.push(
+                `${latinDay.date} (${version}, commemoration): ${portugueseName}`,
+              );
+            }
+          }
         }
       }
     }

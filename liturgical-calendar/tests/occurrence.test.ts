@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { resolve } from 'path';
 import { Directorium } from '@engine/directorium';
-import { resolveOccurrence, getRankFromFile } from '@engine/occurrence';
+import { resolveOccurrence, getRankFromFile, getRuleFromFile } from '@engine/occurrence';
 import { parseRankField } from '@engine/parser';
 
 const DATA_DIR = resolve(__dirname, '../data');
@@ -37,6 +37,25 @@ describe('getRankFromFile', () => {
     expect(rank).toContain('Duplex I classis');
     const parsed = parseRankField(rank);
     expect(parsed.numericRank).toBe(6);
+  });
+
+  it('does not confuse a 1963 rank override with the 1960 rubrics', () => {
+    const rank1960 = parseRankField(
+      getRankFromFile(OFFICE_DIR, 'Sancti/01-14', VERSION_1960),
+    );
+    const rank1963 = parseRankField(
+      getRankFromFile(OFFICE_DIR, 'Sancti/01-14', 'Monastic - 1963'),
+    );
+
+    expect(rank1960.numericRank).toBe(3);
+    expect(rank1963.numericRank).toBe(1.1);
+  });
+
+  it('evaluates conditional Festum Domini rules against the exact version', () => {
+    expect(getRuleFromFile(OFFICE_DIR, 'Sancti/11-18', VERSION_DA))
+      .toContain('Festum Domini');
+    expect(getRuleFromFile(OFFICE_DIR, 'Sancti/11-18', VERSION_1960))
+      .not.toContain('Festum Domini');
   });
 
   it('reads version-specific rank for DA version', () => {
@@ -138,6 +157,28 @@ describe('resolveOccurrence', () => {
     expect(result.celebration.source).toBe('temporal');
     expect(result.celebration.name).toBe('Feria Quarta Quattuor Temporum Septembris');
     expect(result.celebration.rank).toBe(4.9);
+  });
+
+  it('retains former Simplex saints as commemorations under the 1960 rubrics', () => {
+    const result = resolveOccurrence(26, 8, 2026, VERSION_1960, dir, OFFICE_DIR);
+
+    expect(result.celebration.source).toBe('temporal');
+    expect(result.celebration.rank).toBe(1);
+    expect(result.commemorations).toContain('S. Zephyrini Papæ et Martyris');
+  });
+
+  it('retains former Simplex saints as commemorations under the 1955 rubrics', () => {
+    const result = resolveOccurrence(
+      26,
+      8,
+      2026,
+      'Reduced - 1955',
+      dir,
+      OFFICE_DIR,
+    );
+
+    expect(result.celebration.source).toBe('temporal');
+    expect(result.commemorations).toContain('S. Zephyrini Papæ et Martyris');
   });
 
   it('uses the earlier September Ember week for pre-1960 rubrics', () => {
