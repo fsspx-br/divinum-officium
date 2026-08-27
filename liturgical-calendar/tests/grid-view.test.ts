@@ -159,6 +159,28 @@ describe('renderGrid', () => {
     expect(badge!.textContent).toBe('Test Feast');
   });
 
+  it('renders commemorations below the principal celebration', () => {
+    setLocale('pt');
+    const days = [makeDay({
+      date: '2026-03-01',
+      commemorations: ['São Zeferino, Papa e Mártir', 'Santa Sabina, Mártir'],
+    })];
+    renderGrid(container, days, 2026, 3, noopMonthChange);
+
+    const commemorations = container.querySelector('.calendar-commemorations');
+    expect(commemorations).not.toBeNull();
+    expect(commemorations!.textContent)
+      .toBe('Também: São Zeferino, Papa e Mártir, Santa Sabina, Mártir');
+    expect(commemorations!.getAttribute('title'))
+      .toBe('São Zeferino, Papa e Mártir; Santa Sabina, Mártir');
+  });
+
+  it('does not render a commemoration line when there are none', () => {
+    renderGrid(container, [makeDay()], 2026, 3, noopMonthChange);
+
+    expect(container.querySelector('.calendar-commemorations')).toBeNull();
+  });
+
   it('shows church emoji for holy days of obligation', () => {
     const days = [makeDay({ date: '2026-03-01', holyDayOfObligation: true })];
     renderGrid(container, days, 2026, 3, noopMonthChange);
