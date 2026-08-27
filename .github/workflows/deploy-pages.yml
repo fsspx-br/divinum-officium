@@ -45,3 +45,7 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          # The complete 2025–3000 calendar artifact can take longer than
+          # deploy-pages' 10-minute default to activate.
+          timeout: 1800000
