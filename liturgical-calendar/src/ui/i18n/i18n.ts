@@ -13,9 +13,7 @@ import la from './locales/la.json';
 export type Locale = 'en' | 'pt' | 'la';
 
 export const LOCALES: { code: Locale; label: string }[] = [
-  { code: 'en', label: 'English' },
-  { code: 'pt', label: 'Português' },
-  { code: 'la', label: 'Latina' },
+  { code: 'pt', label: 'Português' }
 ];
 
 type Dict = Record<string, string>;

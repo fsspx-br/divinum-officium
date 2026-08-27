@@ -62,7 +62,6 @@ interface LocaleConfig {
 const LATIN_OFFICE_DIR = resolve(__dirname, '../../../web/www/horas/Latin');
 
 const LOCALES: LocaleConfig[] = [
-  { code: 'en', officeDir: resolve(__dirname, '../../../web/www/horas/English') },
   { code: 'pt', officeDir: resolve(__dirname, '../../../web/www/horas/Portugues') },
   { code: 'la', officeDir: LATIN_OFFICE_DIR },
 ];
