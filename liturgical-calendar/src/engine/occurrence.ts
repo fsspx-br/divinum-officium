@@ -154,31 +154,25 @@ function getRankFromFileUncached(officeDir: string, filename: string, version: s
 
   const content = readOfficeFile(filePath);
   if (content === null) {
-    // File not found in primary dir — try fallback (e.g. Latin) to resolve redirects
+    // File not found in primary dir — use fallback metadata. For a plain
+    // redirect, still prefer the translated target in the primary locale.
     if (fallbackOfficeDir && fallbackOfficeDir !== officeDir) {
       const fbPath = resolve(fallbackOfficeDir, filename.endsWith('.txt') ? filename : `${filename}.txt`);
       const fbContent = readOfficeFile(fbPath);
       if (fbContent !== null) {
         const fbFirst = fbContent.split('\n')[0].trim();
-        if (fbFirst.startsWith('@')) {
-          // Fallback file is a redirect — follow it back in the primary dir
+        if (fbFirst.startsWith('@') && !/^\[Rank\]/m.test(fbContent)) {
           return getRankFromFile(officeDir, fbFirst.slice(1).trim(), version, depth + 1, fallbackOfficeDir);
         }
       }
-      // Fallback file exists but isn't a redirect — read rank from fallback directly
       return getRankFromFile(fallbackOfficeDir, filename, version, depth, undefined);
     }
     return '';
   }
 
-  // Handle file-level @redirect: first line starts with "@SomeOther/File"
-  // Some files have @ on first line followed by additional content (e.g. Quad6-6r.txt)
+  // A file may begin with an @redirect and then override selected sections.
+  // Parse a local [Rank] first; follow the redirect only when none is supplied.
   const firstLine = content.split('\n')[0].trim();
-  if (firstLine.startsWith('@')) {
-    const redirectTarget = firstLine.slice(1).trim();
-    return getRankFromFile(officeDir, redirectTarget, version, depth + 1, fallbackOfficeDir);
-  }
-
   const lines = content.split('\n');
 
   // Find all [Rank] sections. There may be multiple: [Rank] and [Rank] (rubrica ...)
@@ -249,6 +243,11 @@ function getRankFromFileUncached(officeDir: string, filename: string, version: s
   }
 
   const result = selectedRank || baseRank;
+  if (!result && firstLine.startsWith('@')) {
+    const redirectTarget = firstLine.slice(1).trim();
+    return getRankFromFile(officeDir, redirectTarget, version, depth + 1, fallbackOfficeDir);
+  }
+
   // If no [Rank] found in locale file, try fallback (e.g. Latin has rank metadata)
   if (!result && fallbackOfficeDir && fallbackOfficeDir !== officeDir) {
     return getRankFromFile(fallbackOfficeDir, filename, version, depth, undefined);
@@ -284,9 +283,9 @@ export function resolveOccurrence(
   let tfile = temporaRedirect || tday;
 
   // Check for annual transfers of the temporal office
-  const transferTempora = dir.getFromDirektorium('tempora', version, sday);
-  if (transferTempora && /tempora/i.test(transferTempora) && !dir.isTransferred(transferTempora, year, version)) {
-    tfile = transferTempora;
+  const fixedTemporaEntry = dir.getFromDirektorium('tempora', version, sday);
+  if (fixedTemporaEntry && /tempora/i.test(fixedTemporaEntry) && !dir.isTransferred(fixedTemporaEntry, year, version)) {
+    tfile = fixedTemporaEntry;
   }
 
   // The original engine overlays August–November monthly temporal files on
@@ -327,7 +326,11 @@ export function resolveOccurrence(
   // -----------------------------------------------------------------------
   // 3. Build sanctoral reference
   // -----------------------------------------------------------------------
-  const kalEntry = dir.getFromDirektorium('kalendar', version, sday);
+  // Local calendars store fixed sanctoral propers in the Tempora overlay.
+  // Prefer that local entry; otherwise fall back to the general kalendar.
+  const kalEntry = fixedTemporaEntry && !/tempora/i.test(fixedTemporaEntry)
+    ? fixedTemporaEntry
+    : dir.getFromDirektorium('kalendar', version, sday);
   let sfile = '';
   const commemoCandidates: string[] = [];
 
@@ -561,13 +564,14 @@ function extractNameFromFileUncached(officeDir: string, filename: string, depth 
 
   const content = readOfficeFile(filePath);
   if (content === null) {
-    // File not found — try fallback to resolve redirects
+    // File not found — use the fallback locale. A plain redirect may point to
+    // an office which is translated in the primary locale, so prefer it.
     if (fallbackOfficeDir && fallbackOfficeDir !== officeDir) {
       const fbPath = resolve(fallbackOfficeDir, filename.endsWith('.txt') ? filename : `${filename}.txt`);
       const fbContent = readOfficeFile(fbPath);
       if (fbContent !== null) {
         const fbFirst = fbContent.split('\n')[0].trim();
-        if (fbFirst.startsWith('@')) {
+        if (fbFirst.startsWith('@') && !/^\[Officium\]/m.test(fbContent)) {
           return extractNameFromFile(officeDir, fbFirst.slice(1).trim(), depth + 1, fallbackOfficeDir);
         }
       }
@@ -576,12 +580,9 @@ function extractNameFromFileUncached(officeDir: string, filename: string, depth 
     return filename;
   }
 
-  // Handle file-level @redirect (first line starts with @)
+  // A redirecting file can override [Officium], so inspect it before following
+  // the referenced office.
   const firstLine = content.split('\n')[0].trim();
-  if (firstLine.startsWith('@')) {
-    return extractNameFromFile(officeDir, firstLine.slice(1).trim(), depth + 1, fallbackOfficeDir);
-  }
-
   const lines = content.split('\n');
   let inOfficium = false;
 
@@ -598,6 +599,10 @@ function extractNameFromFileUncached(officeDir: string, filename: string, depth 
       if (!line || line.startsWith('(')) continue;
       return line;
     }
+  }
+
+  if (firstLine.startsWith('@')) {
+    return extractNameFromFile(officeDir, firstLine.slice(1).trim(), depth + 1, fallbackOfficeDir);
   }
 
   return filename;

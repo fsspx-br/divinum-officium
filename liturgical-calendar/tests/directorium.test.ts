@@ -3,6 +3,10 @@ import { resolve } from 'path';
 import { Directorium, getEasterLetter } from '@engine/directorium';
 
 const DATA_DIR = resolve(__dirname, '../data');
+const BRASILIA_TEMPORA_FILE = resolve(
+  __dirname,
+  '../../web/www/Tabulae/Tempora/Brasilia.txt',
+);
 
 // ---------------------------------------------------------------------------
 // getEasterLetter
@@ -101,6 +105,34 @@ describe('Directorium – tempora lookups', () => {
     // May or may not be present depending on the version's tempora file
     // At minimum we exercise the code path
     expect(typeof result).toBe('string');
+  });
+});
+
+describe('Directorium – Brasilia overlay', () => {
+  const dir = new Directorium(DATA_DIR, BRASILIA_TEMPORA_FILE);
+
+  it('loads fixed Brazilian propers for the 1960 table', () => {
+    expect(dir.getFromDirektorium('tempora', 'Rubrics 1960 - 1960', '10-12'))
+      .toBe('Brasilia/10-12-BMVApparecida');
+    expect(dir.getFromDirektorium('tempora', 'Rubrics 1960 - 1960', '10-19'))
+      .toBe('Brasilia/10-19-PetriAlcantara');
+  });
+
+  it('loads the Brazilian movable proper', () => {
+    expect(dir.getFromDirektorium('tempora', 'Rubrics 1960 - 1960', 'Tempora/Pent03-4'))
+      .toBe('Tempora/Brasilia/Pent03-4-EucharisticiCordisDNJC');
+  });
+
+  it('inherits the DA overlay through the 1954 transfer base', () => {
+    expect(dir.getFromDirektorium('tempora', 'Divino Afflatu - 1954', '10-12'))
+      .toBe('Brasilia/10-12-BMVApparecida');
+  });
+
+  it('does not apply later Brazilian propers to the 1570 or monastic tables', () => {
+    expect(dir.getFromDirektorium('tempora', 'Tridentine - 1570', '10-12'))
+      .not.toBe('Brasilia/10-12-BMVApparecida');
+    expect(dir.getFromDirektorium('tempora', 'Monastic - 1963', '10-12'))
+      .not.toBe('Brasilia/10-12-BMVApparecida');
   });
 });
 

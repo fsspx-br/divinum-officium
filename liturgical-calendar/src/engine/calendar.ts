@@ -33,11 +33,16 @@ export class LiturgicalCalendar {
   private fallbackOfficeDir?: string;
   private dir: Directorium;
 
-  constructor(dataDir: string, officeDir: string, fallbackOfficeDir?: string) {
+  constructor(
+    dataDir: string,
+    officeDir: string,
+    fallbackOfficeDir?: string,
+    localTemporaFile?: string,
+  ) {
     this.dataDir = dataDir;
     this.officeDir = officeDir;
     this.fallbackOfficeDir = fallbackOfficeDir;
-    this.dir = new Directorium(dataDir);
+    this.dir = new Directorium(dataDir, localTemporaFile);
   }
 
   /**

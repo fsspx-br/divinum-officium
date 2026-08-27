@@ -6,13 +6,19 @@ import { parseRankField } from '@engine/parser';
 
 const DATA_DIR = resolve(__dirname, '../data');
 const OFFICE_DIR = resolve(__dirname, '../../web/www/horas/Latin');
+const BRASILIA_TEMPORA_FILE = resolve(
+  __dirname,
+  '../../web/www/Tabulae/Tempora/Brasilia.txt',
+);
 const VERSION_1960 = 'Rubrics 1960 - 1960';
 const VERSION_DA = 'Divino Afflatu - 1954';
 
 let dir: Directorium;
+let brasiliaDir: Directorium;
 
 beforeAll(() => {
   dir = new Directorium(DATA_DIR);
+  brasiliaDir = new Directorium(DATA_DIR, BRASILIA_TEMPORA_FILE);
 });
 
 // ---------------------------------------------------------------------------
@@ -72,6 +78,17 @@ describe('getRankFromFile', () => {
     const parsed = parseRankField(rank);
     expect(parsed.rankType).toContain('Semiduplex');
     expect(parsed.numericRank).toBe(5);
+  });
+
+  it('uses rank and title overrides from a redirecting local proper', () => {
+    const rank = getRankFromFile(
+      OFFICE_DIR,
+      'Sancti/Brasilia/10-19-PetriAlcantara',
+      VERSION_1960,
+    );
+    const parsed = parseRankField(rank);
+    expect(parsed.numericRank).toBe(6);
+    expect(parsed.rankType).toContain('Duplex I classis');
   });
 });
 
@@ -147,5 +164,29 @@ describe('resolveOccurrence', () => {
     expect(result.commemorations.length).toBeGreaterThanOrEqual(0);
     // St. Joseph is sanctoral winner
     expect(result.celebration.source).toBe('sanctoral');
+  });
+});
+
+describe('resolveOccurrence – Brasilia overlay', () => {
+  it('resolves Our Lady of Aparecida as Brazil’s principal patroness', () => {
+    const result = resolveOccurrence(12, 10, 2026, VERSION_1960, brasiliaDir, OFFICE_DIR);
+    expect(result.celebration.source).toBe('sanctoral');
+    expect(result.celebration.name).toContain('Apparecida');
+    expect(result.celebration.rank).toBe(6);
+  });
+
+  it('resolves St Peter of Alcantara from the newly added proper', () => {
+    const result = resolveOccurrence(19, 10, 2026, VERSION_1960, brasiliaDir, OFFICE_DIR);
+    expect(result.celebration.source).toBe('sanctoral');
+    expect(result.celebration.name).toBe(
+      'S. Petri de Alcantara Confessoris, Patroni principalis Brasiliae',
+    );
+    expect(result.celebration.rank).toBe(6);
+  });
+
+  it('resolves the movable Eucharistic Heart feast on Thursday after the third Sunday', () => {
+    const result = resolveOccurrence(18, 6, 2026, VERSION_1960, brasiliaDir, OFFICE_DIR);
+    expect(result.celebration.name).toBe('Eucharistici Cordis Jesu');
+    expect(result.celebration.rank).toBe(3);
   });
 });

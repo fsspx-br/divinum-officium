@@ -81,12 +81,14 @@ function loadTransferFileLines(
 
 export class Directorium {
   private dataFolder: string;
+  private localTemporaFile?: string;
   private data: Record<string, VersionDef> = {};
   private cache: Record<string, Record<string, string>> = {};
   private loaded = false;
 
-  constructor(dataFolder: string) {
+  constructor(dataFolder: string, localTemporaFile?: string) {
     this.dataFolder = dataFolder;
+    this.localTemporaFile = localTemporaFile;
   }
 
   // -------------------------------------------------------------------------
@@ -174,6 +176,39 @@ export class Directorium {
       const val = semiIdx === -1 ? rest.trim() : rest.slice(0, semiIdx).trim();
       if (key) {
         this.cache[cacheKey][key] = val;
+      }
+    }
+
+    // Apply an optional diocesan/national overlay after the general table so
+    // matching local propers replace the universal entry for the same key.
+    // This mirrors the version suffixes in files such as
+    // web/www/Tabulae/Tempora/Brasilia.txt:
+    //   10-12=Brasilia/10-12-BMVApparecida;;1888 1906 DA 1960
+    if (this.localTemporaFile) {
+      let localContent = '';
+      try {
+        localContent = readFileSync(this.localTemporaFile, 'utf-8');
+      } catch {
+        localContent = '';
+      }
+
+      const localLines = localContent
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line && !line.startsWith('#'));
+
+      for (const line of localLines) {
+        const [linePart, versionFilter] = line.split(/\s*;;\s*/, 2);
+        if (versionFilter && !versionFilter.includes(vd.transfer)) continue;
+
+        const eqIdx = linePart.indexOf('=');
+        if (eqIdx === -1) continue;
+
+        const key = linePart.slice(0, eqIdx).trim();
+        const val = linePart.slice(eqIdx + 1).trim();
+        if (key) {
+          this.cache[cacheKey][key] = val;
+        }
       }
     }
   }

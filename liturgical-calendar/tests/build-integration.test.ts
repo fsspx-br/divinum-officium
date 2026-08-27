@@ -31,6 +31,10 @@ const __dirname = dirname(__filename);
 
 const DATA_DIR = resolve(__dirname, '../data');
 const LATIN_OFFICE_DIR = resolve(__dirname, '../../web/www/horas/Latin');
+const BRASILIA_TEMPORA_FILE = resolve(
+  __dirname,
+  '../../web/www/Tabulae/Tempora/Brasilia.txt',
+);
 
 const LOCALES = [
   { code: 'en', officeDir: resolve(__dirname, '../../web/www/horas/English') },
@@ -70,7 +74,12 @@ const TEST_YEAR = 2026;
 for (const locale of LOCALES) {
   describe(`Locale: ${locale.code}`, () => {
     const fallback = locale.officeDir !== LATIN_OFFICE_DIR ? LATIN_OFFICE_DIR : undefined;
-    const calendar = new LiturgicalCalendar(DATA_DIR, locale.officeDir, fallback);
+    const calendar = new LiturgicalCalendar(
+      DATA_DIR,
+      locale.officeDir,
+      fallback,
+      BRASILIA_TEMPORA_FILE,
+    );
 
     for (const version of VERSIONS) {
       describe(`Version: ${version}`, () => {
@@ -232,6 +241,7 @@ describe('Portuguese translation regressions', () => {
       DATA_DIR,
       resolve(__dirname, '../../web/www/horas/Portugues'),
       LATIN_OFFICE_DIR,
+      BRASILIA_TEMPORA_FILE,
     );
     const day = calendar.getCalendarDay(
       new Date(TEST_YEAR, 7, 24),
@@ -244,11 +254,17 @@ describe('Portuguese translation regressions', () => {
   });
 
   it('leaves no Latin-only titles in the Rubrics 1960 Portuguese calendar for 2026', () => {
-    const latinCalendar = new LiturgicalCalendar(DATA_DIR, LATIN_OFFICE_DIR);
+    const latinCalendar = new LiturgicalCalendar(
+      DATA_DIR,
+      LATIN_OFFICE_DIR,
+      undefined,
+      BRASILIA_TEMPORA_FILE,
+    );
     const portugueseCalendar = new LiturgicalCalendar(
       DATA_DIR,
       resolve(__dirname, '../../web/www/horas/Portugues'),
       LATIN_OFFICE_DIR,
+      BRASILIA_TEMPORA_FILE,
     );
     const version = 'Rubrics 1960 - 1960';
     const latinDays = latinCalendar.getCalendarYear(TEST_YEAR, version);
@@ -285,11 +301,17 @@ describe('Portuguese translation regressions', () => {
   });
 
   it('keeps celebration names and ranks translated at the end of the generated range', () => {
-    const latinCalendar = new LiturgicalCalendar(DATA_DIR, LATIN_OFFICE_DIR);
+    const latinCalendar = new LiturgicalCalendar(
+      DATA_DIR,
+      LATIN_OFFICE_DIR,
+      undefined,
+      BRASILIA_TEMPORA_FILE,
+    );
     const portugueseCalendar = new LiturgicalCalendar(
       DATA_DIR,
       resolve(__dirname, '../../web/www/horas/Portugues'),
       LATIN_OFFICE_DIR,
+      BRASILIA_TEMPORA_FILE,
     );
     const version = 'Rubrics 1960 - 1960';
     const latinDays = latinCalendar.getCalendarYear(3000, version);
@@ -329,6 +351,7 @@ describe('Portuguese translation regressions', () => {
       DATA_DIR,
       resolve(__dirname, '../../web/www/horas/Portugues'),
       LATIN_OFFICE_DIR,
+      BRASILIA_TEMPORA_FILE,
     );
     const version = 'Tridentine - 1906';
     const days = applyPtTranslations(calendar.getCalendarYear(2424, version), PT_TRANSLATIONS);

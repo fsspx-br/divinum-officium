@@ -42,6 +42,10 @@ const __dirname = dirname(__filename);
 
 // Paths are relative to THIS script's location inside src/build/
 const DATA_DIR = resolve(__dirname, '../../data');
+const BRASILIA_TEMPORA_FILE = resolve(
+  __dirname,
+  '../../../web/www/Tabulae/Tempora/Brasilia.txt',
+);
 const DIST_DIR = process.env.CALENDAR_DIST_DIR
   ? resolve(process.env.CALENDAR_DIST_DIR)
   : resolve(__dirname, '../../dist');
@@ -125,7 +129,12 @@ async function main(): Promise<void> {
     console.log(`  office: ${locale.officeDir}`);
 
     const fallback = locale.officeDir !== LATIN_OFFICE_DIR ? LATIN_OFFICE_DIR : undefined;
-    const calendar = new LiturgicalCalendar(DATA_DIR, locale.officeDir, fallback);
+    const calendar = new LiturgicalCalendar(
+      DATA_DIR,
+      locale.officeDir,
+      fallback,
+      BRASILIA_TEMPORA_FILE,
+    );
 
     const available = new Set(calendar.getVersions());
     const missing = VERSIONS.filter((v) => !available.has(v));
