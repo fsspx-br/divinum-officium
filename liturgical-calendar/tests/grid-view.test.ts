@@ -159,7 +159,7 @@ describe('renderGrid', () => {
     expect(badge!.textContent).toBe('Test Feast');
   });
 
-  it('renders commemorations below the principal celebration', () => {
+  it('renders commemorations inside the principal celebration badge', () => {
     setLocale('pt');
     const days = [makeDay({
       date: '2026-03-01',
@@ -169,8 +169,11 @@ describe('renderGrid', () => {
 
     const commemorations = container.querySelector('.calendar-commemorations');
     expect(commemorations).not.toBeNull();
+    expect(commemorations!.parentElement).toBe(
+      container.querySelector('.celebration-badge'),
+    );
     expect(commemorations!.textContent)
-      .toBe('Também: São Zeferino, Papa e Mártir, Santa Sabina, Mártir');
+      .toBe('São Zeferino, Papa e Mártir, Santa Sabina, Mártir');
     expect(commemorations!.getAttribute('title'))
       .toBe('São Zeferino, Papa e Mártir; Santa Sabina, Mártir');
   });

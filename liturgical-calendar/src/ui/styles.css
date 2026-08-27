@@ -415,7 +415,7 @@ main {
 }
 
 .calendar-commemorations {
-  color: var(--ui-text-muted);
+  color: inherit;
   display: -webkit-box;
   font-size: 0.6rem;
   line-height: 1.25;

@@ -180,16 +180,17 @@ export function renderGrid(
       const badge = document.createElement('span');
       badge.className = `celebration-badge color-${calDay.color}`;
       badge.textContent = calDay.celebration.name;
-      badge.title = calDay.celebration.name; // full name on hover
-      td.appendChild(badge);
+      badge.title = [calDay.celebration.name, ...calDay.commemorations].join('; ');
 
       if (calDay.commemorations.length > 0) {
-        const commemorations = document.createElement('div');
+        const commemorations = document.createElement('span');
         commemorations.className = 'calendar-commemorations';
-        commemorations.textContent = `${t('agenda.also')} ${calDay.commemorations.join(', ')}`;
+        commemorations.textContent = calDay.commemorations.join(', ');
         commemorations.title = calDay.commemorations.join('; ');
-        td.appendChild(commemorations);
+        badge.appendChild(commemorations);
       }
+
+      td.appendChild(badge);
 
       const events = customEvents.filter((event) => event.date === isoDate);
       if (events.length > 0) {
