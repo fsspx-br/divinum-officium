@@ -414,6 +414,18 @@ main {
   color: #1a1a1a;
 }
 
+.calendar-commemorations {
+  color: var(--ui-text-muted);
+  display: -webkit-box;
+  font-size: 0.6rem;
+  line-height: 1.25;
+  margin-top: 0.2rem;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .day-event-list {
   display: flex;
   flex-direction: column;

@@ -183,6 +183,14 @@ export function renderGrid(
       badge.title = calDay.celebration.name; // full name on hover
       td.appendChild(badge);
 
+      if (calDay.commemorations.length > 0) {
+        const commemorations = document.createElement('div');
+        commemorations.className = 'calendar-commemorations';
+        commemorations.textContent = `${t('agenda.also')} ${calDay.commemorations.join(', ')}`;
+        commemorations.title = calDay.commemorations.join('; ');
+        td.appendChild(commemorations);
+      }
+
       const events = customEvents.filter((event) => event.date === isoDate);
       if (events.length > 0) {
         const eventList = document.createElement('div');
