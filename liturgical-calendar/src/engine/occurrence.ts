@@ -605,5 +605,12 @@ function extractNameFromFileUncached(officeDir: string, filename: string, depth 
     return extractNameFromFile(officeDir, firstLine.slice(1).trim(), depth + 1, fallbackOfficeDir);
   }
 
+  // Locale files are often intentionally partial (for example, containing
+  // only a translated prayer). If [Officium] is absent, obtain the title from
+  // the fallback locale instead of exposing an internal file reference.
+  if (fallbackOfficeDir && fallbackOfficeDir !== officeDir) {
+    return extractNameFromFile(fallbackOfficeDir, filename, depth, undefined);
+  }
+
   return filename;
 }

@@ -236,14 +236,72 @@ for (const locale of LOCALES) {
 }
 
 describe('Portuguese translation regressions', () => {
-  it('translates the ASCII ae spelling of St. Bartholomew used by the Portuguese office', () => {
-    const calendar = new LiturgicalCalendar(
-      DATA_DIR,
-      resolve(__dirname, '../../web/www/horas/Portugues'),
-      LATIN_OFFICE_DIR,
-      BRASILIA_TEMPORA_FILE,
+  const portugueseCalendar = new LiturgicalCalendar(
+    DATA_DIR,
+    resolve(__dirname, '../../web/www/horas/Portugues'),
+    LATIN_OFFICE_DIR,
+    BRASILIA_TEMPORA_FILE,
+  );
+
+  it('uses fallback titles for partial Portuguese office files', () => {
+    const cases = [
+      {
+        date: new Date(2027, 0, 24),
+        version: 'Rubrics 1960 - 1960',
+        expected: 'Domingo da Septuagésima',
+      },
+      {
+        date: new Date(2025, 0, 28),
+        version: 'Tridentine - 1570',
+        expected: 'Santa Inês, Virgem e Mártir — segunda festa',
+      },
+      {
+        date: new Date(2028, 1, 24),
+        version: 'Divino Afflatu - 1939',
+        expected: 'Vigília de São Matias, Apóstolo',
+      },
+      {
+        date: new Date(2025, 0, 23),
+        version: 'Tridentine - 1570',
+        expected: 'Santa Emerenciana, Virgem e Mártir',
+      },
+      {
+        date: new Date(2027, 10, 24),
+        version: 'Tridentine - 1570',
+        expected: 'São Crisógono, Mártir',
+      },
+    ];
+
+    for (const testCase of cases) {
+      const day = portugueseCalendar.getCalendarDay(testCase.date, testCase.version);
+      const [translated] = applyPtTranslations([day], PT_TRANSLATIONS);
+      const names = [translated.celebration.name, ...translated.commemorations];
+
+      expect(names).toContain(testCase.expected);
+      expect(names.some((name) => /^(?:Tempora|Sancti(?:M|Cist|OP)?)\//.test(name)))
+        .toBe(false);
+    }
+  });
+
+  it('marks Septuagesima Sunday as a holy day, not an abstinence day', () => {
+    const day = portugueseCalendar.getCalendarDay(
+      new Date(2027, 0, 24),
+      'Rubrics 1960 - 1960',
     );
-    const day = calendar.getCalendarDay(
+    const [translated] = applyPtTranslations([day], PT_TRANSLATIONS);
+    const [marked] = markAbstinence(markHolyDays(
+      [translated],
+      HOLY_DAYS_CONFIG,
+      ['brazil'],
+    ));
+
+    expect(marked.celebration.name).toBe('Domingo da Septuagésima');
+    expect(marked.holyDayOfObligation).toBe(true);
+    expect(marked.abstinence).toBeUndefined();
+  });
+
+  it('translates the ASCII ae spelling of St. Bartholomew used by the Portuguese office', () => {
+    const day = portugueseCalendar.getCalendarDay(
       new Date(TEST_YEAR, 7, 24),
       'Rubrics 1960 - 1960',
     );
