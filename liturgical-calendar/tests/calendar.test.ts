@@ -90,6 +90,23 @@ describe('getCalendarDay', () => {
     expect(day.color).toBe('green');
   });
 
+  it('returns violet for the 1960 September Ember Days', () => {
+    for (const dayOfMonth of [23, 25, 26]) {
+      const day = cal.getCalendarDay(new Date(2026, 8, dayOfMonth), VERSION_1960);
+      assertCalendarDayFields(day);
+      expect(day.celebration.name).toContain('Quattuor Temporum Septembris');
+      expect(day.color).toBe('violet');
+    }
+  });
+
+  it('returns red for the Pentecost Ember Days', () => {
+    for (const dayOfMonth of [27, 29, 30]) {
+      const day = cal.getCalendarDay(new Date(2026, 4, dayOfMonth), VERSION_1960);
+      assertCalendarDayFields(day);
+      expect(day.color).toBe('red');
+    }
+  });
+
   it('resolves St. Joseph 2026 (Mar 19) as sanctoral with correct color', () => {
     const day = cal.getCalendarDay(new Date(2026, 2, 19), VERSION_1960);
     assertCalendarDayFields(day);

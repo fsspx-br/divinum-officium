@@ -19,6 +19,8 @@ import {
   isTranslationsEnabled,
   calendarSubscriptionUrl,
   calendarDownloadFilename,
+  calendarPdfFilename,
+  calendarPdfDataYears,
 } from './app-utils';
 import { generateICS } from '../ics/generator';
 import { applyOverrides, type Overrides } from './overrides';
@@ -90,6 +92,7 @@ const btnGrid        = document.getElementById('btn-grid')         as HTMLButton
 const btnAgenda      = document.getElementById('btn-agenda')       as HTMLButtonElement;
 const btnSubscribe   = document.getElementById('btn-subscribe')    as HTMLButtonElement;
 const btnDownload    = document.getElementById('btn-download')     as HTMLButtonElement;
+const btnDownloadPdf = document.getElementById('btn-download-pdf') as HTMLButtonElement;
 const langSelect     = document.getElementById('lang-select')      as HTMLSelectElement;
 const calendarGrid   = document.getElementById('calendar-grid')    as HTMLDivElement;
 const calendarAgenda = document.getElementById('calendar-agenda')  as HTMLDivElement;
@@ -106,8 +109,9 @@ async function loadCalendarData(
   year: number,
   version: VersionEntry,
   locale: Locale = state.currentLocale,
+  showLoadingState = true,
 ): Promise<CalendarDay[]> {
-  showLoading();
+  if (showLoadingState) showLoading();
   const url = `./data/${locale}/${version.slug}/${year}.json`;
   try {
     const plainResponse = await fetch(url);
@@ -301,6 +305,7 @@ function updateUIStrings(): void {
   btnAgenda.textContent = t('controls.agenda');
   btnSubscribe.textContent = t('controls.subscribe');
   btnDownload.textContent = t('controls.download');
+  btnDownloadPdf.textContent = t('controls.downloadPdf');
   btnTranslations.textContent = t('nav.translations');
 
   // Update data-i18n elements (footer legend)
@@ -339,6 +344,40 @@ function handleDownload(): void {
   window.setTimeout(() => URL.revokeObjectURL(blobUrl), 0);
 }
 
+/** Download a print-ready PDF for the month currently displayed. */
+async function handlePdfDownload(): Promise<void> {
+  if (state.yearDays.length === 0) return;
+
+  btnDownloadPdf.disabled = true;
+  try {
+    const { downloadMonthlyCalendarPdf } = await import('./pdf-export');
+    const dataYears = calendarPdfDataYears(state.currentYear, state.currentMonth);
+    const calendarYears = await Promise.all(dataYears.map((year) => (
+      year === state.currentYear
+        ? Promise.resolve(state.yearDays)
+        : loadCalendarData(year, state.currentVersion, state.currentLocale, false)
+    )));
+    const days = applyOverrides(calendarYears.flat(), state.overrides, state.currentLocale);
+    downloadMonthlyCalendarPdf({
+      days,
+      year: state.currentYear,
+      month: state.currentMonth,
+      versionLabel: state.currentVersion.label,
+      locale: state.currentLocale,
+      filename: calendarPdfFilename(
+        state.currentVersion.slug,
+        state.currentYear,
+        state.currentMonth,
+        state.currentLocale,
+      ),
+    });
+  } catch (error) {
+    console.error('Could not generate the monthly PDF:', error);
+  } finally {
+    btnDownloadPdf.disabled = false;
+  }
+}
+
 // ── Event Listeners ─────────────────────────────────────────────────────────
 
 versionSelect.addEventListener('change', () => {
@@ -369,6 +408,7 @@ btnAgenda.addEventListener('click', () => switchView('agenda'));
 btnTranslations.addEventListener('click', () => switchView('translations'));
 btnSubscribe.addEventListener('click', handleSubscribe);
 btnDownload.addEventListener('click', handleDownload);
+btnDownloadPdf.addEventListener('click', handlePdfDownload);
 
 langSelect.addEventListener('change', () => {
   const locale = langSelect.value as Locale;

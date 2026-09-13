@@ -6,6 +6,7 @@
   "controls.agenda": "Agenda",
   "controls.subscribe": "Subscribe",
   "controls.download": "Download .ics",
+  "controls.downloadPdf": "Download PDF",
   "controls.copied": "Copied!",
   "nav.prev": "‹ Prev",
   "nav.next": "Next ›",

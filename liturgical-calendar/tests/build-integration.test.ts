@@ -323,6 +323,27 @@ describe('Portuguese translation regressions', () => {
     expect(translated.commemorations).toContain('São Zeferino, Papa e Mártir');
   });
 
+  it('restores and translates the September 16 and 17 commemorations', () => {
+    const [september16, september17] = [16, 17].map((dayOfMonth) => {
+      const day = portugueseCalendar.getCalendarDay(
+        new Date(TEST_YEAR, 8, dayOfMonth),
+        'Rubrics 1960 - 1960',
+      );
+      return applyPtTranslations([day], PT_TRANSLATIONS)[0];
+    });
+
+    expect(september16.celebration.name).toBe(
+      'Ss. Cornélio, Papa e Cipriano, Bispo, Mártires',
+    );
+    expect(september16.color).toBe('red');
+    expect(september16.commemorations).toContain(
+      'Ss. Eufêmia, Lúcia e Geminiano, Mártires',
+    );
+    expect(september17.commemorations).toContain(
+      'Impressão dos Estigmas de S. Francisco de Assis',
+    );
+  });
+
   it('leaves no Latin-only titles in any Portuguese rubric from 2025 through 2032', () => {
     const latinCalendar = new LiturgicalCalendar(
       DATA_DIR,

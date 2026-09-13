@@ -4,6 +4,7 @@ import { setLocale, t } from '../src/ui/i18n/i18n';
 
 const KEYS = [
   'controls.download',
+  'controls.downloadPdf',
   'nav.translations',
   'translations.title',
   'translations.search',

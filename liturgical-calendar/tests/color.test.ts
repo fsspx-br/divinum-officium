@@ -28,6 +28,39 @@ describe('getLiturgicalColor', () => {
     expect(getLiturgicalColor('easter', 'In Die Pentecostes', 'Duplex I classis', 7)).toBe('red');
   });
 
+  it('returns red for Pentecost Ember Days, including the abbreviated Wednesday title', () => {
+    expect(
+      getLiturgicalColor('easter', 'Feria Quarta Quattuor Temporum', 'Feria privilegiata', 6),
+    ).toBe('red');
+    expect(
+      getLiturgicalColor(
+        'easter',
+        'Feria Sexta Quattuor Temporum Pentecostes',
+        'Feria privilegiata',
+        6,
+      ),
+    ).toBe('red');
+  });
+
+  it('returns violet for the September Ember Days', () => {
+    expect(
+      getLiturgicalColor(
+        'pentecost',
+        'Feria Quarta Quattuor Temporum Septembris',
+        'Feria major',
+        4.9,
+      ),
+    ).toBe('violet');
+    expect(
+      getLiturgicalColor(
+        'pentecost',
+        'Sexta-feira das Têmporas de Setembro',
+        'Féria maior',
+        4.9,
+      ),
+    ).toBe('violet');
+  });
+
   // ---------------------------------------------------------------------------
   // Rule 3: Gaudete Sunday → rose
   // ---------------------------------------------------------------------------
@@ -82,6 +115,12 @@ describe('getLiturgicalColor', () => {
   it('returns red for a single martyr', () => {
     expect(
       getLiturgicalColor('lent', 'S. Thomae Apostoli et Martyris', 'Duplex', 3),
+    ).toBe('red');
+  });
+
+  it('returns red for martyrs named in Brazilian Portuguese', () => {
+    expect(
+      getLiturgicalColor('pentecost', 'Ss. Cornélio e Cipriano, Mártires', 'Semiduplo', 2.2),
     ).toBe('red');
   });
 

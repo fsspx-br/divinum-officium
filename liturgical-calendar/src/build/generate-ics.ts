@@ -23,7 +23,7 @@ import { gzipSync } from 'zlib';
 import { LiturgicalCalendar } from '../engine/calendar';
 import { generateICS } from '../ics/generator';
 import type { CalendarDay } from '../engine/types';
-import { CALENDAR_START_YEAR, CALENDAR_END_YEAR, calendarYearRange } from './range';
+import { CALENDAR_START_YEAR, CALENDAR_END_YEAR, calendarDataYearRange } from './range';
 import {
   markHolyDays,
   markAbstinence,
@@ -116,7 +116,7 @@ async function main(): Promise<void> {
   const currentYear = new Date().getFullYear();
   const startYear = Number(process.env.CALENDAR_START_YEAR ?? CALENDAR_START_YEAR);
   const endYear = Number(process.env.CALENDAR_END_YEAR ?? CALENDAR_END_YEAR);
-  const years = calendarYearRange(startYear, endYear);
+  const years = calendarDataYearRange(startYear, endYear);
   const rollingYears = new Set([currentYear - 1, currentYear, currentYear + 1, currentYear + 2]);
 
   let totalFiles = 0;

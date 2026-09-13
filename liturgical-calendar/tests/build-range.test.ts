@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CALENDAR_START_YEAR,
   CALENDAR_END_YEAR,
+  calendarDataYearRange,
   calendarYearRange,
 } from '../src/build/range';
 
@@ -17,5 +18,12 @@ describe('long-range calendar build', () => {
   it('rejects an inverted or non-integer range', () => {
     expect(() => calendarYearRange(3000, 2025)).toThrow(/Invalid calendar year range/);
     expect(() => calendarYearRange(2025.5, 3000)).toThrow(/Invalid calendar year range/);
+  });
+
+  it('generates hidden adjacent years for complete PDF boundary weeks', () => {
+    const years = calendarDataYearRange();
+    expect(years[0]).toBe(CALENDAR_START_YEAR - 1);
+    expect(years.at(-1)).toBe(CALENDAR_END_YEAR + 1);
+    expect(years).toHaveLength(978);
   });
 });

@@ -6,6 +6,7 @@
   "controls.agenda": "Ordo",
   "controls.subscribe": "Subscribere",
   "controls.download": "Deponere .ics",
+  "controls.downloadPdf": "Deponere PDF",
   "controls.copied": "Transcriptum!",
   "nav.prev": "‹ Prior",
   "nav.next": "Sequens ›",

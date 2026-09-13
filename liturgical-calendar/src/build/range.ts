@@ -13,3 +13,11 @@ export function calendarYearRange(
 
   return Array.from({ length: endYear - startYear + 1 }, (_, index) => startYear + index);
 }
+
+/** Include one hidden context year on each side for Sunday-to-Sunday PDF pages. */
+export function calendarDataYearRange(
+  startYear: number = CALENDAR_START_YEAR,
+  endYear: number = CALENDAR_END_YEAR,
+): number[] {
+  return calendarYearRange(startYear - 1, endYear + 1);
+}

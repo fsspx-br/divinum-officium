@@ -167,6 +167,15 @@ describe('resolveOccurrence', () => {
     expect(result.commemorations).toContain('S. Zephyrini Papæ et Martyris');
   });
 
+  it('retains a nameless-rank secondary sanctoral office as a commemoration', () => {
+    const result = resolveOccurrence(16, 9, 2026, VERSION_1960, dir, OFFICE_DIR);
+
+    expect(result.celebration.name).toBe('Ss. Cornelii Papæ et Cypriani Episcopi, Martyrum');
+    expect(result.commemorations).toContain(
+      'Ss. Euphemiæ, Luciæ et Geminiani Martyrum',
+    );
+  });
+
   it('retains former Simplex saints as commemorations under the 1955 rubrics', () => {
     const result = resolveOccurrence(
       26,

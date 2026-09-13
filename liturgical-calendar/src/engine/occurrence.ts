@@ -641,9 +641,14 @@ export function resolveOccurrence(
       const cRank = getRankFromFile(officeDir, c, version, 0, fallbackOfficeDir);
       if (cRank) {
         const parsed = parseRankField(cRank);
-        if (parsed.name) {
-          pushCommemoration(parsed.name);
-        }
+        pushCommemoration(
+          parsed.name || extractNameFromFile(
+            officeDir,
+            c,
+            0,
+            fallbackOfficeDir,
+          ),
+        );
       }
     }
 

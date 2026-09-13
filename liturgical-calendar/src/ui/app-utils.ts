@@ -47,3 +47,20 @@ export function calendarDownloadFilename(
 ): string {
   return `divinum-officium-${versionSlug}-${year}-${locale}.ics`;
 }
+
+/** Build a descriptive filename for the selected month's PDF calendar. */
+export function calendarPdfFilename(
+  versionSlug: string,
+  year: number,
+  month: number,
+  locale: string,
+): string {
+  return `calendario-liturgico-${versionSlug}-${year}-${String(month).padStart(2, '0')}-${locale}.pdf`;
+}
+
+/** Years needed to print a complete Sunday-to-Sunday page around the month. */
+export function calendarPdfDataYears(year: number, month: number): number[] {
+  if (month === 1) return [year - 1, year];
+  if (month === 12) return [year, year + 1];
+  return [year];
+}

@@ -12,19 +12,20 @@ import type { LiturgicalColor, Season } from './types';
  *
  * Priority order (first match wins):
  *  1. All Souls / Defunctorum → black
- *  2. Pentecost Sunday (temporal Pasc7) → red
- *  3. Gaudete Sunday (Dominica III Adventus) → rose
- *  4. Laetare Sunday (Dominica IV in Quadragesima) → rose
- *  5. Feasts of Cross / Crucis → red
- *  6. Precious Blood / Sanguinis → red
- *  7. Good Friday / Parasceve → black
- *  8. Martyrs → red
- *  9. Apostles / Evangelists → red
- * 10. BVM feasts → white
- * 11. Confessors, Virgins, Angels, Bishops, Abbots, Widows, Doctors → white
- * 12. Feasts of the Lord with rank ≥ 5 → white
- * 13. Named feasts (rank ≥ 2, not feria/dominica) in Lent/Advent → white
- * 14. Season defaults
+ *  2. Pentecost Sunday and Pentecost Ember Days → red
+ *  3. All other Ember Days → violet
+ *  4. Gaudete Sunday (Dominica III Adventus) → rose
+ *  5. Laetare Sunday (Dominica IV in Quadragesima) → rose
+ *  6. Feasts of Cross / Crucis → red
+ *  7. Precious Blood / Sanguinis → red
+ *  8. Good Friday / Parasceve → black
+ *  9. Martyrs → red
+ * 10. Apostles / Evangelists → red
+ * 11. BVM feasts → white
+ * 12. Confessors, Virgins, Angels, Bishops, Abbots, Widows, Doctors → white
+ * 13. Feasts of the Lord with rank ≥ 5 → white
+ * 14. Named feasts (rank ≥ 2, not feria/dominica) in Lent/Advent → white
+ * 15. Season defaults
  */
 export function getLiturgicalColor(
   season: Season,
@@ -34,6 +35,7 @@ export function getLiturgicalColor(
 ): LiturgicalColor {
   const name = celebrationName;
   const nameLower = name.toLowerCase();
+  const normalizedName = nameLower.normalize('NFD').replace(/\p{M}/gu, '');
   const rankLower = rankType.toLowerCase();
 
   // 1. All Souls / Office of the Dead
@@ -41,7 +43,7 @@ export function getLiturgicalColor(
     return 'black';
   }
 
-  // 2. Pentecost Sunday
+  // 2. Pentecost Sunday and explicitly named Pentecost Ember Days
   // weekRef Pasc7 maps to the Pentecost Sunday mass; the celebration name
   // typically contains "Dominica Pentecostes" or "In Die Pentecostes"
   if (
@@ -51,7 +53,14 @@ export function getLiturgicalColor(
     return 'red';
   }
 
-  // 3. Gaudete Sunday (3rd Sunday of Advent)
+  // 3. Ember Days: red during Pentecost week, violet in every other season.
+  // Some source files use the abbreviated title "Feria Quarta Quattuor Temporum"
+  // without naming Pentecost, so Easter season is also used to identify that case.
+  if (/quattuor(?:\s+temporum)?|ember|temporas/i.test(normalizedName)) {
+    return season === 'easter' || /pentecost/i.test(normalizedName) ? 'red' : 'violet';
+  }
+
+  // 4. Gaudete Sunday (3rd Sunday of Advent)
   if (/dominica.*iii.*adventus|adventus.*iii/i.test(name) || /gaudete/i.test(name)) {
     return 'rose';
   }
@@ -77,7 +86,7 @@ export function getLiturgicalColor(
   }
 
   // 8. Martyrs
-  if (/martyr/i.test(name)) {
+  if (/martyr|martir/i.test(normalizedName)) {
     return 'red';
   }
 

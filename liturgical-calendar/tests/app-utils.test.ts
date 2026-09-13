@@ -5,6 +5,8 @@ import {
   isTranslationsEnabled,
   calendarSubscriptionUrl,
   calendarDownloadFilename,
+  calendarPdfFilename,
+  calendarPdfDataYears,
 } from '../src/ui/app-utils';
 
 describe('versionSlug', () => {
@@ -117,5 +119,26 @@ describe('calendarDownloadFilename', () => {
   it('describes the selected version, year, and locale', () => {
     expect(calendarDownloadFilename('Rubrics-1960-1960', 3000, 'pt'))
       .toBe('divinum-officium-Rubrics-1960-1960-3000-pt.ics');
+  });
+});
+
+describe('calendarPdfFilename', () => {
+  it('describes the selected version, month, year, and locale', () => {
+    expect(calendarPdfFilename('Rubrics-1960-1960', 2026, 9, 'pt'))
+      .toBe('calendario-liturgico-Rubrics-1960-1960-2026-09-pt.pdf');
+  });
+});
+
+describe('calendarPdfDataYears', () => {
+  it('loads the preceding year for January context', () => {
+    expect(calendarPdfDataYears(2026, 1)).toEqual([2025, 2026]);
+  });
+
+  it('loads the following year for December context', () => {
+    expect(calendarPdfDataYears(2026, 12)).toEqual([2026, 2027]);
+  });
+
+  it('uses only the selected year for other months', () => {
+    expect(calendarPdfDataYears(2026, 9)).toEqual([2026]);
   });
 });
